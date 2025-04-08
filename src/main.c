@@ -29,6 +29,58 @@ typedef enum {
     PARSE_STATEMTNT_UNRECOGNIZED_STATEMENT,
 } ParseStatementResult;
 
+typedef struct {
+    enum {
+        FIELD_DATA_TYPE_INT,
+        FIELD_DATA_TYPE_CHAR,
+    } type;
+    union {
+        struct {
+        } int_type;
+        struct {
+            size_t capacity;
+        } char_type;
+    } metadata;
+
+} FieldDataType;
+
+typedef struct {
+    size_t fieldc;
+    char **field_names;
+    FieldDataType *field_data_types;
+} TableSchema;
+
+void print_schema(TableSchema *schema) {
+    printf("TableSchema { .fieldc = %zu, .field_names = [", schema->fieldc);
+
+    if (schema->fieldc > 0) {
+        for (size_t i = 0; i < schema->fieldc; i++) {
+            printf("\"%s\"%s", schema->field_names[i],
+                   i != schema->fieldc - 1 ? ", " : "");
+        }
+    }
+
+    printf("] .field_data_types = [");
+
+    if (schema->fieldc > 0) {
+        for (size_t i = 0; i < schema->fieldc; i++) {
+            FieldDataType field_data_type = schema->field_data_types[i];
+            switch (field_data_type.type) {
+            case FIELD_DATA_TYPE_INT:
+                printf("INT");
+                break;
+            case FIELD_DATA_TYPE_CHAR:
+                printf("CHAR(%zu)",
+                       field_data_type.metadata.char_type.capacity);
+                break;
+            }
+            printf("%s", i != schema->fieldc - 1 ? ", " : "");
+        }
+    }
+
+    printf("] }");
+}
+
 void close_input_buffer(InputBuffer *input_buffer) {
     free(input_buffer->buffer);
 }
@@ -89,6 +141,24 @@ int main(int argc, char *argv[]) {
         .length = 0,
         .capacity = 0,
     };
+
+    size_t fieldc = 2;
+    char *field_names[2] = {"Name", "Age"};
+    FieldDataType field_data_types[2] = {
+        {.type = FIELD_DATA_TYPE_CHAR,
+         .metadata = {.char_type =
+                          {
+                              .capacity = 20,
+                          }}},
+        {.type = FIELD_DATA_TYPE_INT, .metadata = {}}};
+    TableSchema example_schema = {
+        .fieldc = fieldc,
+        .field_names = field_names,
+        .field_data_types = field_data_types,
+    };
+
+    print_schema(&example_schema);
+    printf("\n");
 
     while (true) {
         print_prompt();
