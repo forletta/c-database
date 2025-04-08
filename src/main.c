@@ -11,8 +11,8 @@ typedef struct {
 } InputBuffer;
 
 typedef enum {
-    META_COMAND_SUCCESS,
-    META_COMAND_UNRECOGNIZED_COMAND,
+    META_COMMAND_SUCCESS,
+    META_COMMAND_UNRECOGNIZED_COMMAND,
 } MetaCommandResult;
 
 void close_input_buffer(InputBuffer *input_buffer) {
@@ -21,13 +21,13 @@ void close_input_buffer(InputBuffer *input_buffer) {
 
 void print_prompt() { printf("db > "); }
 
-MetaCommandResult exec_meta_comand(InputBuffer *input_buffer) {
+MetaCommandResult exec_meta_command(InputBuffer *input_buffer) {
     if (strcmp(input_buffer->buffer, ".exit") == 0) {
         close_input_buffer(input_buffer);
         exit(EXIT_SUCCESS);
     }
 
-    return META_COMAND_UNRECOGNIZED_COMAND;
+    return META_COMMAND_UNRECOGNIZED_COMMAND;
 }
 
 void read_input(InputBuffer *input_buffer) {
@@ -55,11 +55,11 @@ int main(int argc, char *argv[]) {
         read_input(&input_buffer);
 
         if (input_buffer.buffer[0] == '.') {
-            switch (exec_meta_comand(&input_buffer)) {
-            case META_COMAND_SUCCESS:
+            switch (exec_meta_command(&input_buffer)) {
+            case META_COMMAND_SUCCESS:
                 continue;
-            case META_COMAND_UNRECOGNIZED_COMAND:
-                printf("Unrecognized comand: %s\n", input_buffer.buffer);
+            case META_COMMAND_UNRECOGNIZED_COMMAND:
+                printf("Unrecognized command: %s\n", input_buffer.buffer);
                 continue;
             }
         }
