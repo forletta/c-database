@@ -2,13 +2,19 @@ BUILD_DIR := build
 SRC_DIR := src
 INC_DIR := include
 
-CC := gcc
-CFLAGS := -std=c11
+CC := clang
+CFLAGS := -g -std=c11
 
 OBJS := $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.c))
 
-db: $(BUILD_DIR)/db
+run: $(BUILD_DIR)/db
 	./$(BUILD_DIR)/db
+
+debug: $(BUILD_DIR)/db
+	lldb ./$(BUILD_DIR)/db
+
+.PHONY: db
+db: $(BUILD_DIR)/db
 
 $(BUILD_DIR)/db: $(OBJS)
 	$(CC) $^ -o $@
