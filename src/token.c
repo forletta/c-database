@@ -100,6 +100,9 @@ TokenParseResult token_parse_str(Vector *stream, TokenCursor *cursor,
             case '\'':
             case '"':
             case '\\':
+            case 'n':
+            case 'r':
+            case 't':
                 token.token_size += 2;
             }
             break;
