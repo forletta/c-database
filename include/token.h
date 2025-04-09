@@ -7,15 +7,11 @@
 
 typedef struct {
     enum {
-        // TOKEN_TYPE_KEYWORD,
         TOKEN_TYPE_L_PAREN,
         TOKEN_TYPE_R_PAREN,
-        // TOKEN_TYPE_IDENT,
-        // TOKEN_TYPE_STR,
-        // TOKEN_TYPE_NUM,
     } type;
     size_t token_size;
-    char *token;
+    const char *token;
 } Token;
 
 typedef enum {
@@ -23,14 +19,22 @@ typedef enum {
     TOKENIZE_FAILURE,
 } TokenParseResult;
 
+typedef struct {
+    size_t buffer_size;
+    const char *buffer;
+    size_t cursor;
+} TokenCursor;
+
 static const char *token_types[2] = {
     "TOKEN_TYPE_L_PAREN",
     "TOKEN_TYPE_R_PAREN",
 };
 
-TokenParseResult token_parse(Vector *stream, char *src, size_t src_size);
+TokenParseResult token_parse(Vector *stream, const char *src, size_t src_size);
 
 void token_print(Token *token);
 
-#endif /* ifndef TOKEN_H */
+const char *token_cursor_step(TokenCursor *cursor);
+const char *token_cursor_peek(TokenCursor *cursor);
 
+#endif /* ifndef TOKEN_H */
