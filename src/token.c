@@ -88,7 +88,6 @@ TokenParseResult token_parse_digit(Vector *stream, TokenCursor *cursor,
 TokenParseResult token_parse_alpha(Vector *stream, TokenCursor *cursor,
                                    const char *token_start) {
     const char *c;
-    const char *peek;
     Token token = {
         .type = TOKEN_TYPE_IDENT,
         .token = token_start,
