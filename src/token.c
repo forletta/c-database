@@ -24,6 +24,18 @@ TokenParseResult token_parse(Vector *stream, const char *src, size_t src_size) {
             token.token = c;
             vector_push(stream, &token, sizeof(Token));
             break;
+        case ',':
+            token.type = TOKEN_TYPE_COMMA;
+            token.token_size = 1;
+            token.token = c;
+            vector_push(stream, &token, sizeof(Token));
+            break;
+        case ';':
+            token.type = TOKEN_TYPE_SEMI;
+            token.token_size = 1;
+            token.token = c;
+            vector_push(stream, &token, sizeof(Token));
+            break;
         default:
             printf("Unknown token: %c\n", *c);
             break;

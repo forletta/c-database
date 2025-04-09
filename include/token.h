@@ -7,8 +7,13 @@
 
 typedef struct {
     enum {
+        // Brackets
         TOKEN_TYPE_L_PAREN,
         TOKEN_TYPE_R_PAREN,
+
+        // Punctuation
+        TOKEN_TYPE_COMMA,
+        TOKEN_TYPE_SEMI,
     } type;
     size_t token_size;
     const char *token;
