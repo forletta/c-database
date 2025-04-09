@@ -2,6 +2,7 @@
 #include "vector.h"
 #include <ctype.h>
 #include <stdio.h>
+#include <string.h>
 
 TokenParseResult token_parse(Vector *stream, const char *src, size_t src_size) {
     TokenCursor cursor = {
@@ -99,6 +100,12 @@ TokenParseResult token_parse_alpha(Vector *stream, TokenCursor *cursor,
         token_cursor_step(cursor);
     }
 
+    TokenIsKeywordResult is_keyword =
+        token_iskeyword(token.token, token.token_size);
+
+    if (is_keyword.is_keyword)
+        token.type = is_keyword.token_type.token_type;
+
     vector_push(stream, &token, sizeof(Token));
 
     return TOKENIZE_SUCCESS;
@@ -126,6 +133,31 @@ const char *token_cursor_peek(TokenCursor *cursor) {
     return cursor->buffer + cursor->cursor;
 }
 
-bool token_isalnumlit(char c) {
-    return isalnum(c) || c == '_';
+bool token_isalnumlit(char c) { return isalnum(c) || c == '_'; }
+
+TokenIsKeywordResult token_iskeyword(const char *str, size_t str_size) {
+    TokenIsKeywordResult result = {.is_keyword = false};
+
+    for (size_t i = 0; i < TOKEN_KEYWORDS_LEN; i++) {
+        bool iskeyword = true;
+
+        if (TOKEN_KEYWORDS[i].keyword_len > str_size)
+            continue;
+
+        for (size_t j = 0; j < str_size; j++) {
+            if (TOKEN_KEYWORDS[i].keyword[j] != tolower(str[j])) {
+                iskeyword = false;
+                break;
+            }
+        }
+
+        if (iskeyword == true) {
+            result.is_keyword = true;
+            result.token_type.token_type = TOKEN_KEYWORDS[i].token_type;
+
+            break;
+        }
+    }
+
+    return result;
 }
