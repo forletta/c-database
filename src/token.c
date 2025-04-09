@@ -32,7 +32,7 @@ TokenParseResult token_parse(Vector *stream, const char *src, size_t src_size) {
             token.type = TOKEN_TYPE_SEMI;
             break;
         default:
-            if (isalnum(*c)) {
+            if (token_isalnumlit(*c)) {
                 if ((result = token_parse_alnum(stream, &cursor, c)) !=
                     TOKENIZE_SUCCESS) {
                     return result;
@@ -54,7 +54,7 @@ TokenParseResult token_parse_alnum(Vector *stream, TokenCursor *cursor,
                                    const char *token_start) {
     if (isdigit(*token_start)) {
         return token_parse_digit(stream, cursor, token_start);
-    } else if (isalpha(*token_start)) {
+    } else if (token_isalnumlit(*token_start)) {
         return token_parse_alpha(stream, cursor, token_start);
     }
 
@@ -71,8 +71,8 @@ TokenParseResult token_parse_digit(Vector *stream, TokenCursor *cursor,
         .token_size = 1,
     };
 
-    while ((c = token_cursor_peek(cursor)) != NULL && isdigit(*c)) {
-        if ((peek = token_cursor_peek(cursor)) != NULL && isalpha(*peek)) {
+    while ((c = token_cursor_peek(cursor)) != NULL) {
+        if (!isdigit(*c)) {
             return TOKENIZE_FAILURE;
         }
 
@@ -95,7 +95,7 @@ TokenParseResult token_parse_alpha(Vector *stream, TokenCursor *cursor,
         .token_size = 1,
     };
 
-    while ((c = token_cursor_peek(cursor)) != NULL && isalnum(*c)) {
+    while ((c = token_cursor_peek(cursor)) != NULL && token_isalnumlit(*c)) {
         token.token_size += 1;
         token_cursor_step(cursor);
     }
@@ -125,4 +125,8 @@ const char *token_cursor_peek(TokenCursor *cursor) {
     }
 
     return cursor->buffer + cursor->cursor;
+}
+
+bool token_isalnumlit(char c) {
+    return isalnum(c) || c == '_';
 }

@@ -4,6 +4,7 @@
 #include "vector.h"
 #include <stddef.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 typedef struct {
     enum {
@@ -51,5 +52,7 @@ void token_print(Token *token);
 
 const char *token_cursor_step(TokenCursor *cursor);
 const char *token_cursor_peek(TokenCursor *cursor);
+
+bool token_isalnumlit(char c);
 
 #endif /* ifndef TOKEN_H */
