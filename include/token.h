@@ -14,6 +14,10 @@ typedef struct {
         // Punctuation
         TOKEN_TYPE_COMMA,
         TOKEN_TYPE_SEMI,
+
+        // Literal
+        TOKEN_TYPE_NUM,
+        TOKEN_TYPE_IDENT,
     } type;
     size_t token_size;
     const char *token;
@@ -30,12 +34,18 @@ typedef struct {
     size_t cursor;
 } TokenCursor;
 
-static const char *token_types[2] = {
-    "TOKEN_TYPE_L_PAREN",
-    "TOKEN_TYPE_R_PAREN",
+static const char *token_types[6] = {
+    "TOKEN_TYPE_L_PAREN", "TOKEN_TYPE_R_PAREN", "TOKEN_TYPE_COMMA",
+    "TOKEN_TYPE_SEMI",    "TOKEN_TYPE_NUM",     "TOKEN_TYPE_IDENT",
 };
 
 TokenParseResult token_parse(Vector *stream, const char *src, size_t src_size);
+TokenParseResult token_parse_alnum(Vector *stream, TokenCursor *cursor,
+                                   const char *token_start);
+TokenParseResult token_parse_digit(Vector *stream, TokenCursor *cursor,
+                                   const char *token_start);
+TokenParseResult token_parse_alpha(Vector *stream, TokenCursor *cursor,
+                                   const char *token_start);
 
 void token_print(Token *token);
 
