@@ -10,34 +10,26 @@ TokenParseResult token_parse(Vector *stream, const char *src, size_t src_size) {
         .cursor = 0,
     };
     const char *c;
-    Token token = {};
+    Token token = {
+        .token_size = 1,
+    };
     TokenParseResult result;
 
     while ((c = token_cursor_step(&cursor)) != NULL) {
+        token.token = c;
+
         switch (*c) {
         case '(':
             token.type = TOKEN_TYPE_L_PAREN;
-            token.token_size = 1;
-            token.token = c;
-            vector_push(stream, &token, sizeof(Token));
             break;
         case ')':
             token.type = TOKEN_TYPE_R_PAREN;
-            token.token_size = 1;
-            token.token = c;
-            vector_push(stream, &token, sizeof(Token));
             break;
         case ',':
             token.type = TOKEN_TYPE_COMMA;
-            token.token_size = 1;
-            token.token = c;
-            vector_push(stream, &token, sizeof(Token));
             break;
         case ';':
             token.type = TOKEN_TYPE_SEMI;
-            token.token_size = 1;
-            token.token = c;
-            vector_push(stream, &token, sizeof(Token));
             break;
         default:
             if (isalnum(*c)) {
@@ -49,8 +41,10 @@ TokenParseResult token_parse(Vector *stream, const char *src, size_t src_size) {
             } else {
                 printf("Unknown token: %c\n", *c);
             }
-            break;
+            continue;
         }
+
+        vector_push(stream, &token, sizeof(Token));
     }
 
     return TOKENIZE_SUCCESS;
