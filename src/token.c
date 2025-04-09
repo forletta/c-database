@@ -32,6 +32,13 @@ TokenParseResult token_parse(Vector *stream, const char *src, size_t src_size) {
         case ';':
             token.type = TOKEN_TYPE_SEMI;
             break;
+        case '\'':
+        case '"':
+            if ((result = token_parse_str(stream, &cursor, c)) !=
+                TOKENIZE_SUCCESS) {
+                return result;
+            }
+            continue;
         default:
             if (token_isalnumlit(*c)) {
                 if ((result = token_parse_alnum(stream, &cursor, c)) !=
@@ -57,6 +64,59 @@ TokenParseResult token_parse_alnum(Vector *stream, TokenCursor *cursor,
         return token_parse_digit(stream, cursor, token_start);
     } else if (token_isalnumlit(*token_start)) {
         return token_parse_alpha(stream, cursor, token_start);
+    }
+
+    return TOKENIZE_FAILURE;
+}
+
+TokenParseResult token_parse_str(Vector *stream, TokenCursor *cursor,
+                                 const char *token_start) {
+    static const char SINGLE = '\'';
+    static const char DOUBLE = '"';
+
+    const char *c;
+    Token token = {
+        .type = TOKEN_TYPE_STR, .token_size = 1, .token = token_start};
+    char state;
+
+    switch (*token_start) {
+    case SINGLE:
+        state = SINGLE;
+        break;
+    case DOUBLE:
+        state = DOUBLE;
+        break;
+    default:
+        return TOKENIZE_FAILURE;
+    }
+
+    while ((c = token_cursor_step(cursor)) != NULL) {
+        switch (*c) {
+        case '\\':
+            if ((c = token_cursor_step(cursor)) == NULL)
+                return TOKENIZE_FAILURE;
+
+            switch (*c) {
+            case '\'':
+            case '"':
+            case '\\':
+                token.token_size += 2;
+            }
+            break;
+        case '\'':
+        case '"':
+            token.token_size += 1;
+
+            if (*c == state) {
+                vector_push(stream, &token, sizeof(token));
+                return TOKENIZE_SUCCESS;
+            }
+
+            break;
+        default:
+            token.token_size += 1;
+            break;
+        }
     }
 
     return TOKENIZE_FAILURE;

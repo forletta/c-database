@@ -20,6 +20,7 @@ typedef enum {
     // Literals
     TOKEN_TYPE_NUM,
     TOKEN_TYPE_IDENT,
+    TOKEN_TYPE_STR,
 
     // Keywords
     TOKEN_TYPE_KW_INSERT,
@@ -61,11 +62,11 @@ typedef struct {
     } token_type;
 } TokenIsKeywordResult;
 
-static const char *token_types[11] = {
-    "TOKEN_TYPE_L_PAREN",   "TOKEN_TYPE_R_PAREN", "TOKEN_TYPE_COMMA",
-    "TOKEN_TYPE_SEMI",      "TOKEN_TYPE_NUM",     "TOKEN_TYPE_IDENT",
-    "TOKEN_TYPE_KW_INSERT", "TOKEN_TYPE_KW_INTO", "TOKEN_TYPE_KW_VALUES",
-    "TOKEN_TYPE_KW_SELECT", "TOKEN_TYPE_KW_FROM"};
+static const char *token_types[12] = {
+    "TOKEN_TYPE_L_PAREN",   "TOKEN_TYPE_R_PAREN",   "TOKEN_TYPE_COMMA",
+    "TOKEN_TYPE_SEMI",      "TOKEN_TYPE_NUM",       "TOKEN_TYPE_IDENT",
+    "TOKEN_TYPE_STR",       "TOKEN_TYPE_KW_INSERT", "TOKEN_TYPE_KW_INTO",
+    "TOKEN_TYPE_KW_VALUES", "TOKEN_TYPE_KW_SELECT", "TOKEN_TYPE_KW_FROM"};
 
 static const TokenKeword TOKEN_KEYWORDS[TOKEN_KEYWORDS_LEN] = {
     {
@@ -96,6 +97,8 @@ static const TokenKeword TOKEN_KEYWORDS[TOKEN_KEYWORDS_LEN] = {
 };
 
 TokenParseResult token_parse(Vector *stream, const char *src, size_t src_size);
+TokenParseResult token_parse_str(Vector *stream, TokenCursor *cursor,
+                                 const char *token_start);
 TokenParseResult token_parse_alnum(Vector *stream, TokenCursor *cursor,
                                    const char *token_start);
 TokenParseResult token_parse_digit(Vector *stream, TokenCursor *cursor,
