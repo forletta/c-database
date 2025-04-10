@@ -128,7 +128,7 @@ TokenParseResult token_parse_str(Vector *stream, TokenCursor *cursor,
 TokenParseResult token_parse_digit(Vector *stream, TokenCursor *cursor,
                                    const char *token_start) {
     const char *c;
-    const char *peek;
+
     Token token = {
         .type = TOKEN_TYPE_NUM,
         .token = token_start,

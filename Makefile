@@ -3,9 +3,11 @@ CFLAGS := -std=c11 -g -Wall -Werror
 
 BUILD_DIR := build
 SRC_DIRS := src
-INC_DIR := include
+INC_DIRS := include
 
 vpath %.c $(SRC_DIRS)
+
+I_FLAGS := $(foreach dir, $(INC_DIRS), -I$(dir))
 
 OBJS := $(foreach dir, $(SRC_DIRS), $(patsubst %.c, $(BUILD_DIR)/%.o, $(notdir $(wildcard $(dir)/*.c))))
 
@@ -22,7 +24,7 @@ $(BUILD_DIR)/db: $(OBJS)
 	$(CC) $^ -o $@
 
 $(BUILD_DIR)/%.o: %.c $(BUILD_DIR)
-	$(CC) $(CFLAGS) -I $(INC_DIR) -c $< -o $@
+	$(CC) $(CFLAGS) $(I_FLAGS) -c $< -o $@
 
 $(BUILD_DIR):
 	mkdir $(BUILD_DIR)
