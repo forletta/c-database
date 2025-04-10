@@ -1,16 +1,18 @@
+CC := clang
+CFLAGS := -std=c11 -g -Wall -Werror
+
 BUILD_DIR := build
-SRC_DIR := src
+SRC_DIRS := src
 INC_DIR := include
 
-CC := clang
-CFLAGS := -g -std=c11
+vpath %.c $(SRC_DIRS)
 
-OBJS := $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(wildcard $(SRC_DIR)/*.c))
+OBJS := $(foreach dir, $(SRC_DIRS), $(patsubst %.c, $(BUILD_DIR)/%.o, $(notdir $(wildcard $(dir)/*.c))))
 
-run: $(BUILD_DIR)/db
+run: db
 	./$(BUILD_DIR)/db
 
-debug: $(BUILD_DIR)/db
+debug: db
 	lldb ./$(BUILD_DIR)/db
 
 .PHONY: db
@@ -19,7 +21,7 @@ db: $(BUILD_DIR)/db
 $(BUILD_DIR)/db: $(OBJS)
 	$(CC) $^ -o $@
 
-$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c $(BUILD_DIR)
+$(BUILD_DIR)/%.o: %.c $(BUILD_DIR)
 	$(CC) $(CFLAGS) -I $(INC_DIR) -c $< -o $@
 
 $(BUILD_DIR):
