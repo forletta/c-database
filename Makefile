@@ -2,8 +2,8 @@ CC := clang
 CFLAGS := -std=c11 -g -Wall -Werror
 
 BUILD_DIR := build
-SRC_DIRS := src
-INC_DIRS := include
+SRC_DIRS := src external/c-core/src
+INC_DIRS := include external/c-core/include
 
 vpath %.c $(SRC_DIRS)
 
