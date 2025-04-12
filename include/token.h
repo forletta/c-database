@@ -1,7 +1,7 @@
 #ifndef TOKEN_H
 #define TOKEN_H
 
-#include "vector.h"
+#include "ascii_string.h"
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -32,9 +32,14 @@ typedef enum {
 
 typedef struct {
     TokenType type;
-    size_t token_size;
-    const char *token;
+    AsciiStr token;
 } Token;
+
+typedef struct {
+    Token *ptr;
+    size_t len;
+    size_t cap;
+} TokenVector;
 
 typedef enum {
     TOKENIZE_SUCCESS,
@@ -42,15 +47,13 @@ typedef enum {
 } TokenParseResult;
 
 typedef struct {
-    size_t buffer_size;
-    const char *buffer;
+    AsciiStr str;
     size_t cursor;
 } TokenCursor;
 
 typedef struct {
     TokenType token_type;
-    size_t keyword_len;
-    const char *keyword;
+    AsciiStr keyword;
 } TokenKeword;
 
 typedef struct {
@@ -71,47 +74,73 @@ static const char *token_types[12] = {
 static const TokenKeword TOKEN_KEYWORDS[TOKEN_KEYWORDS_LEN] = {
     {
         .token_type = TOKEN_TYPE_KW_INSERT,
-        .keyword_len = 6,
-        .keyword = "insert",
+        .keyword =
+            {
+                .ptr = "insert",
+                .len = 6,
+            },
     },
     {
         .token_type = TOKEN_TYPE_KW_INTO,
-        .keyword_len = 4,
-        .keyword = "into",
+        .keyword =
+            {
+                .ptr = "into",
+                .len = 4,
+            },
     },
     {
         .token_type = TOKEN_TYPE_KW_VALUES,
-        .keyword_len = 6,
-        .keyword = "values",
+        .keyword =
+            {
+                .ptr = "values",
+                .len = 6,
+            },
     },
     {
         .token_type = TOKEN_TYPE_KW_SELECT,
-        .keyword_len = 6,
-        .keyword = "select",
+        .keyword =
+            {
+                .ptr = "select",
+                .len = 6,
+            },
     },
     {
         .token_type = TOKEN_TYPE_KW_FROM,
-        .keyword_len = 4,
-        .keyword = "from",
+        .keyword =
+            {
+                .ptr = "from",
+                .len = 4,
+            },
     },
 };
 
-TokenParseResult token_parse(Vector *stream, const char *src, size_t src_size);
-TokenParseResult token_parse_str(Vector *stream, TokenCursor *cursor,
-                                 const char *token_start);
-TokenParseResult token_parse_alnum(Vector *stream, TokenCursor *cursor,
-                                   const char *token_start);
-TokenParseResult token_parse_digit(Vector *stream, TokenCursor *cursor,
-                                   const char *token_start);
-TokenParseResult token_parse_alpha(Vector *stream, TokenCursor *cursor,
-                                   const char *token_start);
+// TokenVector:
 
-void token_print(Token *token);
+Token *const TokenVector_get(const TokenVector *v, size_t i);
+void TokenVector_push(TokenVector *v, Token *token);
 
-const char *token_cursor_step(TokenCursor *cursor);
-const char *token_cursor_peek(TokenCursor *cursor);
+// Token:
+
+void Token_print(Token *token);
+
+// TokenCursor:
+
+char TokenCursor_step(TokenCursor *cursor);
+size_t TokenCursor_current_index(TokenCursor *cursor);
+char TokenCursor_current_char(TokenCursor *cursor);
+char TokenCursor_peek(TokenCursor *cursor);
+
+// Parsing:
+
+TokenParseResult token_parse(TokenVector *stream, AsciiStr input);
+TokenParseResult token_parse_str(TokenVector *stream, TokenCursor *cursor);
+TokenParseResult token_parse_alnum(TokenVector *stream, TokenCursor *cursor);
+TokenParseResult token_parse_digit(TokenVector *stream, TokenCursor *cursor);
+TokenParseResult token_parse_alpha(TokenVector *stream, TokenCursor *cursor);
+
+// Validation:
 
 bool token_isalnumlit(char c);
-TokenIsKeywordResult token_iskeyword(const char *str, size_t str_size);
+TokenIsKeywordResult token_iskeyword(AsciiStr *str);
 
 #endif /* ifndef TOKEN_H */

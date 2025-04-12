@@ -1,214 +1,234 @@
 #include "token.h"
-#include "vector.h"
+#include "c_core_error.h"
+#include "void_vector.h"
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 
-TokenParseResult token_parse(Vector *stream, const char *src, size_t src_size) {
+// TokenVector:
+
+Token *const TokenVector_get(const TokenVector *v, size_t i) {
+    if (i < v->len)
+        return v->ptr + i;
+
+    out_of_bounds();
+}
+
+void TokenVector_push(TokenVector *v, Token *token) {
+    VoidVector_ensure_capacity((VoidVector *)v, sizeof(Token), 1);
+
+    v->ptr[v->len++] = *token;
+}
+
+// Token:
+
+void Token_print(Token *token) {
+    printf("Token { type = %s, token = \"%.*s\" }", token_types[token->type],
+           (int)token->token.len, token->token.ptr);
+}
+
+// TokenCursor:
+
+char TokenCursor_step(TokenCursor *cursor) {
+    if (cursor->cursor >= cursor->str.len)
+        return EOF;
+
+    return *AsciiStr_get(&cursor->str, cursor->cursor++);
+}
+
+char TokenCursor_peek(TokenCursor *cursor) {
+    if (cursor->cursor >= cursor->str.len)
+        return EOF;
+
+    return *AsciiStr_get(&cursor->str, cursor->cursor);
+}
+
+size_t TokenCursor_current_index(TokenCursor *cursor) {
+    return cursor->cursor == 0 ? 0 : cursor->cursor - 1;
+}
+
+char TokenCursor_current_char(TokenCursor *cursor) {
+    size_t current_index = TokenCursor_current_index(cursor);
+    return *AsciiStr_get(&cursor->str, current_index);
+}
+
+// Parsing:
+
+TokenParseResult token_parse(TokenVector *stream, AsciiStr input) {
+    TokenParseResult result = {};
+
     TokenCursor cursor = {
-        .buffer_size = src_size,
-        .buffer = src,
+        .str = input,
         .cursor = 0,
     };
-    const char *c;
-    Token token = {
-        .token_size = 1,
-    };
-    TokenParseResult result;
+    char c;
 
-    while ((c = token_cursor_step(&cursor)) != NULL) {
-        token.token = c;
+    Token token = {};
 
-        switch (*c) {
+    while ((c = TokenCursor_step(&cursor)) != EOF) {
+        size_t current_index = TokenCursor_current_index(&cursor);
+
+        switch (c) {
         case '(':
             token.type = TOKEN_TYPE_L_PAREN;
+            token.token =
+                AsciiStr_substr(&input, current_index, current_index + 1);
             break;
         case ')':
             token.type = TOKEN_TYPE_R_PAREN;
+            token.token =
+                AsciiStr_substr(&input, current_index, current_index + 1);
             break;
         case ',':
             token.type = TOKEN_TYPE_COMMA;
+            token.token =
+                AsciiStr_substr(&input, current_index, current_index + 1);
             break;
         case ';':
             token.type = TOKEN_TYPE_SEMI;
+            token.token =
+                AsciiStr_substr(&input, current_index, current_index + 1);
             break;
         case '\'':
         case '"':
-            if ((result = token_parse_str(stream, &cursor, c)) !=
+            if ((result = token_parse_str(stream, &cursor)) !=
                 TOKENIZE_SUCCESS) {
                 return result;
             }
             continue;
         default:
-            if (token_isalnumlit(*c)) {
-                if ((result = token_parse_alnum(stream, &cursor, c)) !=
+            if (token_isalnumlit(c)) {
+                if ((result = token_parse_alnum(stream, &cursor)) !=
                     TOKENIZE_SUCCESS) {
                     return result;
                 }
-            } else if (isspace(*c)) {
+            } else if (isspace(c)) {
             } else {
-                printf("Unknown token: %c\n", *c);
+                printf("Unknown token: %c\n", c);
             }
             continue;
         }
 
-        vector_push(stream, &token, sizeof(Token));
+        TokenVector_push(stream, &token);
     }
 
-    return TOKENIZE_SUCCESS;
+    return result;
 }
 
-TokenParseResult token_parse_alnum(Vector *stream, TokenCursor *cursor,
-                                   const char *token_start) {
-    if (isdigit(*token_start)) {
-        return token_parse_digit(stream, cursor, token_start);
-    } else if (token_isalnumlit(*token_start)) {
-        return token_parse_alpha(stream, cursor, token_start);
-    }
+TokenParseResult token_parse_str(TokenVector *stream, TokenCursor *cursor) {
+    size_t start_index = TokenCursor_current_index(cursor);
+    char quote_type = TokenCursor_current_char(cursor);
+    char c;
 
-    return TOKENIZE_FAILURE;
-}
-
-TokenParseResult token_parse_str(Vector *stream, TokenCursor *cursor,
-                                 const char *token_start) {
-    static const char SINGLE = '\'';
-    static const char DOUBLE = '"';
-
-    const char *c;
-    Token token = {
-        .type = TOKEN_TYPE_STR, .token_size = 1, .token = token_start};
-    char state;
-
-    switch (*token_start) {
-    case SINGLE:
-        state = SINGLE;
-        break;
-    case DOUBLE:
-        state = DOUBLE;
-        break;
-    default:
+    if (quote_type != '\'' && quote_type != '"')
         return TOKENIZE_FAILURE;
-    }
 
-    while ((c = token_cursor_step(cursor)) != NULL) {
-        switch (*c) {
+    while ((c = TokenCursor_step(cursor)) != EOF) {
+        switch (c) {
         case '\\':
-            if ((c = token_cursor_step(cursor)) == NULL)
+            if ((c = TokenCursor_step(cursor)) == EOF)
                 return TOKENIZE_FAILURE;
 
-            switch (*c) {
-            case '\'':
-            case '"':
-            case '\\':
-            case 'n':
-            case 'r':
-            case 't':
-                token.token_size += 2;
-            }
             break;
         case '\'':
         case '"':
-            token.token_size += 1;
-
-            if (*c == state) {
-                vector_push(stream, &token, sizeof(token));
+            if (c == quote_type) {
+                Token token = {
+                    .type = TOKEN_TYPE_STR,
+                    .token =
+                        AsciiStr_substr(&cursor->str, start_index,
+                                        TokenCursor_current_index(cursor) + 1),
+                };
+                TokenVector_push(stream, &token);
                 return TOKENIZE_SUCCESS;
             }
 
             break;
-        default:
-            token.token_size += 1;
-            break;
         }
     }
 
     return TOKENIZE_FAILURE;
 }
 
-TokenParseResult token_parse_digit(Vector *stream, TokenCursor *cursor,
-                                   const char *token_start) {
-    const char *c;
+TokenParseResult token_parse_alnum(TokenVector *stream, TokenCursor *cursor) {
+    char current_char = TokenCursor_current_char(cursor);
 
-    Token token = {
-        .type = TOKEN_TYPE_NUM,
-        .token = token_start,
-        .token_size = 1,
-    };
+    if (isdigit(current_char)) {
+        return token_parse_digit(stream, cursor);
+    } else if (token_isalnumlit(current_char)) {
+        return token_parse_alpha(stream, cursor);
+    }
 
-    while ((c = token_cursor_peek(cursor)) != NULL) {
-        if (!isdigit(*c)) {
+    return TOKENIZE_FAILURE;
+}
+
+TokenParseResult token_parse_digit(TokenVector *stream, TokenCursor *cursor) {
+    size_t start_index = TokenCursor_current_index(cursor);
+    char c;
+
+    while ((c = TokenCursor_peek(cursor)) != EOF) {
+        if (isspace(c) || !isalnum(c)) {
+            break;
+        }
+
+        if (isalpha(c)) {
             return TOKENIZE_FAILURE;
         }
 
-        token.token_size += 1;
-        token_cursor_step(cursor);
+        TokenCursor_step(cursor);
     }
 
-    vector_push(stream, &token, sizeof(Token));
+    Token token = {
+        .type = TOKEN_TYPE_NUM,
+        .token = AsciiStr_substr(&cursor->str, start_index,
+                                 TokenCursor_current_index(cursor) + 1),
+    };
+
+    TokenVector_push(stream, &token);
 
     return TOKENIZE_SUCCESS;
 }
 
-TokenParseResult token_parse_alpha(Vector *stream, TokenCursor *cursor,
-                                   const char *token_start) {
-    const char *c;
-    Token token = {
-        .type = TOKEN_TYPE_IDENT,
-        .token = token_start,
-        .token_size = 1,
-    };
+TokenParseResult token_parse_alpha(TokenVector *stream, TokenCursor *cursor) {
+    size_t start_index = TokenCursor_current_index(cursor);
+    char c;
 
-    while ((c = token_cursor_peek(cursor)) != NULL && token_isalnumlit(*c)) {
-        token.token_size += 1;
-        token_cursor_step(cursor);
+    while ((c = TokenCursor_peek(cursor)) != EOF && token_isalnumlit(c)) {
+        TokenCursor_step(cursor);
     }
 
-    TokenIsKeywordResult is_keyword =
-        token_iskeyword(token.token, token.token_size);
+    Token token = {
+        .type = TOKEN_TYPE_IDENT,
+        .token = AsciiStr_substr(&cursor->str, start_index,
+                                 TokenCursor_current_index(cursor) + 1),
+    };
+
+    TokenIsKeywordResult is_keyword = token_iskeyword(&token.token);
 
     if (is_keyword.is_keyword)
         token.type = is_keyword.token_type.token_type;
 
-    vector_push(stream, &token, sizeof(Token));
+    TokenVector_push(stream, &token);
 
     return TOKENIZE_SUCCESS;
 }
 
-void token_print(Token *token) {
-    printf("Token { type = %s, token_size = %zu, token = \"%.*s\" }",
-           token_types[token->type], token->token_size, (int)token->token_size,
-           token->token);
-}
-
-const char *token_cursor_step(TokenCursor *cursor) {
-    if (cursor->cursor == cursor->buffer_size) {
-        return NULL;
-    }
-
-    return cursor->buffer + cursor->cursor++;
-}
-
-const char *token_cursor_peek(TokenCursor *cursor) {
-    if (cursor->cursor == cursor->buffer_size) {
-        return NULL;
-    }
-
-    return cursor->buffer + cursor->cursor;
-}
+// Validation:
 
 bool token_isalnumlit(char c) { return isalnum(c) || c == '_'; }
 
-TokenIsKeywordResult token_iskeyword(const char *str, size_t str_size) {
+TokenIsKeywordResult token_iskeyword(AsciiStr *str) {
     TokenIsKeywordResult result = {.is_keyword = false};
 
     for (size_t i = 0; i < TOKEN_KEYWORDS_LEN; i++) {
         bool iskeyword = true;
 
-        if (TOKEN_KEYWORDS[i].keyword_len > str_size)
+        if (TOKEN_KEYWORDS[i].keyword.len > str->len)
             continue;
 
-        for (size_t j = 0; j < str_size; j++) {
-            if (TOKEN_KEYWORDS[i].keyword[j] != tolower(str[j])) {
+        for (size_t j = 0; j < str->len; j++) {
+            if (*AsciiStr_get(&TOKEN_KEYWORDS[i].keyword, j) !=
+                tolower(*AsciiStr_get(str, j))) {
                 iskeyword = false;
                 break;
             }

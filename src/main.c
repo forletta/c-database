@@ -1,5 +1,6 @@
+#include "ascii_string.h"
 #include "command.h"
-#include "input.h"
+#include "io.h"
 #include "meta_command.h"
 #include "table.h"
 #include <stdbool.h>
@@ -8,11 +9,7 @@
 void print_prompt() { printf("db > "); }
 
 int main(int argc, char *argv[]) {
-    InputBuffer input_buffer = {
-        .buffer = NULL,
-        .length = 0,
-        .capacity = 0,
-    };
+    AsciiString input = {};
 
     size_t fieldc = 2;
     char *field_names[2] = {"Name", "Age"};
@@ -34,24 +31,26 @@ int main(int argc, char *argv[]) {
 
     while (true) {
         print_prompt();
-        read_input(&input_buffer);
+        io_getline(&input, stdin);
 
-        if (input_buffer.buffer[0] == '.') {
-            switch (exec_meta_command(&input_buffer)) {
+        if (*AsciiString_get(&input, 0) == '.') {
+            switch (exec_meta_command(AsciiString_asstr(&input))) {
             case META_COMMAND_SUCCESS:
                 continue;
             case META_COMMAND_UNRECOGNIZED_COMMAND:
-                printf("Unrecognized command: %s\n", input_buffer.buffer);
+                printf("Unrecognized command: %.*s\n", (int)input.len,
+                       input.ptr);
                 continue;
             }
         }
 
         Statement statement;
-        switch (parse_statement(&input_buffer, &statement)) {
+        switch (parse_statement(AsciiString_asstr(&input), &statement)) {
         case PARSE_STATEMENT_SUCCESS:
             break;
         case PARSE_STATEMTNT_UNRECOGNIZED_STATEMENT:
-            printf("Failed to parse statement: %s\n", input_buffer.buffer);
+            printf("Failed to parse statement: %.*s\n", (int)input.len,
+                   input.ptr);
             continue;
         }
 

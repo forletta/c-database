@@ -1,7 +1,7 @@
 #ifndef COMMAND_H
 #define COMMAND_H
 
-#include "input.h"
+#include "ascii_string.h"
 
 typedef enum {
     STATEMENT_TYPE_INSERT,
@@ -17,8 +17,7 @@ typedef enum {
     PARSE_STATEMTNT_UNRECOGNIZED_STATEMENT,
 } ParseStatementResult;
 
-ParseStatementResult parse_statement(InputBuffer *input_buffer,
-                                     Statement *statement);
+ParseStatementResult parse_statement(AsciiStr input, Statement *statement);
 
 void exec_statement(Statement *statement);
 
