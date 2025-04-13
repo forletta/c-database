@@ -7,7 +7,7 @@
 
 // TokenVector:
 
-Token *const TokenVector_get(const TokenVector *v, size_t i) {
+Token *TokenVector_get(const TokenVector *v, size_t i) {
     if (i < v->len)
         return v->ptr + i;
 
@@ -18,6 +18,33 @@ void TokenVector_push(TokenVector *v, Token *token) {
     VoidVector_ensure_capacity((VoidVector *)v, sizeof(Token), 1);
 
     v->ptr[v->len++] = *token;
+}
+void TokenVector_free(TokenVector *v) {
+    VoidVector_free((VoidVector *)v);
+}
+
+// TokenVector:
+
+Token *TokenVectorIter_next(TokenVectorIter *iter) {
+    if (iter->cursor >= iter->stream->len)
+        return NULL;
+
+    return TokenVector_get(iter->stream, iter->cursor++);
+}
+
+Token *TokenVectorIter_peek(TokenVectorIter *iter) {
+    if (iter->cursor >= iter->stream->len)
+        return NULL;
+
+    return TokenVector_get(iter->stream, iter->cursor);
+}
+
+void TokenVectorIter_context_enter(TokenVectorIter *iter) {
+    iter->context_start = iter->cursor;
+}
+
+void TokenVectorIter_context_exit(TokenVectorIter *iter) {
+    iter->cursor = iter->context_start;
 }
 
 // Token:

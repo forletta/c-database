@@ -1,5 +1,6 @@
 #include "ascii_string.h"
-#include "command.h"
+// #include "command.h"
+#include "ast.h"
 #include "io.h"
 #include "meta_command.h"
 #include "table.h"
@@ -44,17 +45,21 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        Statement statement;
-        switch (parse_statement(AsciiString_asstr(&input), &statement)) {
-        case PARSE_STATEMENT_SUCCESS:
-            break;
-        case PARSE_STATEMTNT_UNRECOGNIZED_STATEMENT:
-            printf("Failed to parse statement: %.*s\n", (int)input.len,
-                   input.ptr);
-            continue;
-        }
+        AstParseResult result = Ast_parse(AsciiString_asstr(&input));
 
-        exec_statement(&statement);
+        printf("%s\n", result.type == AST_PARSE_OK ? "ok" : "err");
+
+        // Statement statement;
+        // switch (parse_statement(AsciiString_asstr(&input), &statement)) {
+        // case PARSE_STATEMENT_SUCCESS:
+        //     break;
+        // case PARSE_STATEMTNT_UNRECOGNIZED_STATEMENT:
+        //     printf("Failed to parse statement: %.*s\n", (int)input.len,
+        //            input.ptr);
+        //     continue;
+        // }
+        //
+        // exec_statement(&statement);
     }
 
     return 0;
