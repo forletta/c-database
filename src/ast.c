@@ -103,6 +103,15 @@ AstParseResultType Punctuated_parse(TokenVectorIter *iter,
                                     TokenType token_type) {
     Token token;
 
+    bool parenthesized = false;
+    bool parentheses_closed = false;
+
+    if ((token = TokenVectorIter_peek(iter)).type == TOKEN_TYPE_L_PAREN) {
+        punctuated->prens[0] = token;
+        parenthesized = true;
+        TokenVectorIter_next(iter);
+    }
+
     if (!ast_try_parse_token(iter, &token, token_type)) {
         return AST_PARSE_ERR;
     }
@@ -127,10 +136,23 @@ AstParseResultType Punctuated_parse(TokenVectorIter *iter,
             continue;
         }
 
+        if (!expecting_ident && token.type == TOKEN_TYPE_R_PAREN) {
+            if (!parenthesized) {
+                TokenVectorIter_context_exit(iter);
+                return AST_PARSE_ERR;
+            }
+
+            punctuated->prens[1] = token;
+            parentheses_closed = true;
+
+            TokenVectorIter_next(iter);
+            break;
+        }
+
         break;
     }
 
-    return AST_PARSE_OK;
+    return parenthesized && !parentheses_closed ? AST_PARSE_ERR : AST_PARSE_OK;
 }
 
 bool ast_try_parse_token(TokenVectorIter *iter, Token *target,
@@ -189,8 +211,12 @@ void StatementSelect_print(StatementSelect *statement) {
 }
 
 void Punctuated_print(Punctuated *punctuated) {
-    printf("Punctuated {.tokens = [");
+    printf("Punctuated {.parens = [");
 
+    Token_print(&punctuated->prens[0]);
+    Token_print(&punctuated->prens[1]);
+
+    printf("], .tokens = [");
     for (size_t i = 0; i < punctuated->tokens.len; i++) {
         Token_print(TokenVector_get(&punctuated->tokens, i));
         if (i < punctuated->tokens.len - 1)

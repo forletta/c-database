@@ -6,7 +6,7 @@
 #include <stdbool.h>
 
 typedef struct {
-    // Token prens[2];
+    Token prens[2];
     TokenVector tokens;
     TokenVector commas;
 } Punctuated;
