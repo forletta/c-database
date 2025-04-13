@@ -20,9 +20,7 @@ void TokenVector_push(TokenVector *v, Token *token) {
     v->ptr[v->len++] = *token;
 }
 
-void TokenVector_free(TokenVector *v) {
-    VoidVector_free((VoidVector *)v);
-}
+void TokenVector_free(TokenVector *v) { VoidVector_free((VoidVector *)v); }
 
 // TokenVector:
 
@@ -50,6 +48,22 @@ void TokenVectorIter_context_enter(TokenVectorIter *iter) {
 
 void TokenVectorIter_context_exit(TokenVectorIter *iter) {
     iter->cursor = iter->context_start;
+}
+
+// TokenType:
+
+bool TokenType_cmp(TokenType lhs, TokenType rhs) {
+    if (lhs == TOKEN_TYPE_LIT || rhs == TOKEN_TYPE_LIT) {
+        switch (lhs == TOKEN_TYPE_LIT ? rhs : lhs) {
+        case TOKEN_TYPE_NUM:
+        case TOKEN_TYPE_STR:
+            return true;
+        default:
+            return false;
+        }
+    }
+
+    return lhs == rhs;
 }
 
 // Token:

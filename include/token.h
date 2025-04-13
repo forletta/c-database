@@ -9,7 +9,9 @@
 #define TOKEN_KEYWORDS_LEN 5
 
 typedef enum {
+    // Meta tokens
     TOKEN_TYPE_NULL,
+    TOKEN_TYPE_LIT,
 
     // Brackets
     TOKEN_TYPE_L_PAREN,
@@ -73,12 +75,12 @@ typedef struct {
     } token_type;
 } TokenIsKeywordResult;
 
-static const char *token_types[13] = {
-    "TOKEN_TYPE_NULL",    "TOKEN_TYPE_L_PAREN",   "TOKEN_TYPE_R_PAREN",
-    "TOKEN_TYPE_COMMA",   "TOKEN_TYPE_SEMI",      "TOKEN_TYPE_NUM",
-    "TOKEN_TYPE_IDENT",   "TOKEN_TYPE_STR",       "TOKEN_TYPE_KW_INSERT",
-    "TOKEN_TYPE_KW_INTO", "TOKEN_TYPE_KW_VALUES", "TOKEN_TYPE_KW_SELECT",
-    "TOKEN_TYPE_KW_FROM"};
+static const char *token_types[14] = {
+    "TOKEN_TYPE_NULL",      "TOKEN_TYPE_LIT",     "TOKEN_TYPE_L_PAREN",
+    "TOKEN_TYPE_R_PAREN",   "TOKEN_TYPE_COMMA",   "TOKEN_TYPE_SEMI",
+    "TOKEN_TYPE_NUM",       "TOKEN_TYPE_IDENT",   "TOKEN_TYPE_STR",
+    "TOKEN_TYPE_KW_INSERT", "TOKEN_TYPE_KW_INTO", "TOKEN_TYPE_KW_VALUES",
+    "TOKEN_TYPE_KW_SELECT", "TOKEN_TYPE_KW_FROM"};
 
 static const TokenKeword TOKEN_KEYWORDS[TOKEN_KEYWORDS_LEN] = {
     {
@@ -135,6 +137,10 @@ Token TokenVectorIter_next(TokenVectorIter *iter);
 Token TokenVectorIter_peek(TokenVectorIter *iter);
 void TokenVectorIter_context_enter(TokenVectorIter *iter);
 void TokenVectorIter_context_exit(TokenVectorIter *iter);
+
+// TokenType:
+
+bool TokenType_cmp(TokenType lhs, TokenType rhs);
 
 // Token:
 

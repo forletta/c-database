@@ -36,14 +36,15 @@ AstParseResult Ast_parse(AsciiStr input) {
         .cursor = 0,
     };
 
-    static const AstStatementParser STATEMENT_PARSERS[1] = {
+    static const AstStatementParser STATEMENT_PARSERS[2] = {
         AstStatementSelect_parse,
+        AstStatementInsert_parse,
     };
 
     while (TokenVectorIter_peek(&iter).type != TOKEN_TYPE_NULL) {
         AstParseResultType statement_parse_result = {};
 
-        for (size_t i = 0; i < 1; i++) {
+        for (size_t i = 0; i < 2; i++) {
             statement_parse_result =
                 STATEMENT_PARSERS[i](&iter, &result.ast.ok.statements);
 
@@ -98,6 +99,53 @@ AstParseResultType AstStatementSelect_parse(TokenVectorIter *iter,
     return AST_PARSE_OK;
 }
 
+AstParseResultType AstStatementInsert_parse(TokenVectorIter *iter,
+                                            StatementVector *statements) {
+    TokenVectorIter_context_enter(iter);
+    StatementInsert insert_statement = {};
+
+    if (!ast_try_parse_token(iter, &insert_statement.insert_token,
+                             TOKEN_TYPE_KW_INSERT)) {
+        return AST_PARSE_ERR;
+    }
+
+    if (!ast_try_parse_token(iter, &insert_statement.into_token,
+                             TOKEN_TYPE_KW_INTO)) {
+        return AST_PARSE_ERR;
+    }
+
+    if (!ast_try_parse_token(iter, &insert_statement.table, TOKEN_TYPE_IDENT)) {
+        return AST_PARSE_ERR;
+    }
+
+    if (Punctuated_parse(iter, &insert_statement.fields, TOKEN_TYPE_IDENT) ==
+        AST_PARSE_ERR)
+        return AST_PARSE_ERR;
+
+    if (!ast_try_parse_token(iter, &insert_statement.values_token,
+                             TOKEN_TYPE_KW_VALUES)) {
+        TokenVectorIter_context_exit(iter);
+        return AST_PARSE_ERR;
+    }
+
+    if (Punctuated_parse(iter, &insert_statement.values, TOKEN_TYPE_LIT) ==
+        AST_PARSE_ERR)
+        return AST_PARSE_ERR;
+
+    if (!ast_try_parse_token(iter, &insert_statement.semi_token,
+                             TOKEN_TYPE_SEMI)) {
+        TokenVectorIter_context_exit(iter);
+        return AST_PARSE_ERR;
+    }
+
+    Statement statement = {
+        .type = STATEMENT_TYPE_INSERT,
+        .statement.insert = insert_statement,
+    };
+    StatementVector_push(statements, &statement);
+    return AST_PARSE_OK;
+}
+
 AstParseResultType Punctuated_parse(TokenVectorIter *iter,
                                     Punctuated *punctuated,
                                     TokenType token_type) {
@@ -106,7 +154,8 @@ AstParseResultType Punctuated_parse(TokenVectorIter *iter,
     bool parenthesized = false;
     bool parentheses_closed = false;
 
-    if ((token = TokenVectorIter_peek(iter)).type == TOKEN_TYPE_L_PAREN) {
+    if (TokenType_cmp((token = TokenVectorIter_peek(iter)).type,
+                      TOKEN_TYPE_L_PAREN)) {
         punctuated->prens[0] = token;
         parenthesized = true;
         TokenVectorIter_next(iter);
@@ -120,7 +169,7 @@ AstParseResultType Punctuated_parse(TokenVectorIter *iter,
     bool expecting_ident = false;
 
     while ((token = TokenVectorIter_peek(iter)).type != TOKEN_TYPE_NULL) {
-        if (expecting_ident && token.type == TOKEN_TYPE_IDENT) {
+        if (expecting_ident && TokenType_cmp(token.type, token_type)) {
             TokenVector_push(&punctuated->tokens, &token);
             expecting_ident = false;
 
@@ -128,7 +177,7 @@ AstParseResultType Punctuated_parse(TokenVectorIter *iter,
             continue;
         }
 
-        if (!expecting_ident && token.type == TOKEN_TYPE_COMMA) {
+        if (!expecting_ident && TokenType_cmp(token.type, TOKEN_TYPE_COMMA)) {
             TokenVector_push(&punctuated->commas, &token);
             expecting_ident = true;
 
@@ -136,7 +185,7 @@ AstParseResultType Punctuated_parse(TokenVectorIter *iter,
             continue;
         }
 
-        if (!expecting_ident && token.type == TOKEN_TYPE_R_PAREN) {
+        if (!expecting_ident && TokenType_cmp(token.type, TOKEN_TYPE_R_PAREN)) {
             if (!parenthesized) {
                 TokenVectorIter_context_exit(iter);
                 return AST_PARSE_ERR;
@@ -157,7 +206,8 @@ AstParseResultType Punctuated_parse(TokenVectorIter *iter,
 
 bool ast_try_parse_token(TokenVectorIter *iter, Token *target,
                          TokenType token_type) {
-    if ((*target = TokenVectorIter_next(iter)).type != token_type) {
+    if (!TokenType_cmp((*target = TokenVectorIter_next(iter)).type,
+                       token_type)) {
         TokenVectorIter_context_exit(iter);
         return false;
     }
@@ -186,6 +236,10 @@ void Statement_print(Statement *statement) {
     switch (statement->type) {
     case STATEMENT_TYPE_SELECT:
         StatementSelect_print(&statement->statement.select);
+        break;
+    case STATEMENT_TYPE_INSERT:
+        StatementInsert_print(&statement->statement.insert);
+        break;
     }
 
     printf("}");
@@ -203,6 +257,31 @@ void StatementSelect_print(StatementSelect *statement) {
 
     printf(", .table = ");
     Token_print(&statement->table);
+
+    printf(", .semi_token = ");
+    Token_print(&statement->semi_token);
+
+    printf("}");
+}
+
+void StatementInsert_print(StatementInsert *statement) {
+    printf("StatementSelect {.insert_token = ");
+    Token_print(&statement->insert_token);
+
+    printf(", .into_token = ");
+    Token_print(&statement->into_token);
+
+    printf(", .table = ");
+    Token_print(&statement->table);
+
+    printf(", .fields = ");
+    Punctuated_print(&statement->fields);
+
+    printf(", .values_token = ");
+    Token_print(&statement->values_token);
+
+    printf(", .values = ");
+    Punctuated_print(&statement->values);
 
     printf(", .semi_token = ");
     Token_print(&statement->semi_token);

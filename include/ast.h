@@ -25,25 +25,26 @@ typedef struct {
     Semi semi_token;
 } StatementSelect;
 
-// typedef struct {
-//     Keyword insert_token;
-//     Keyword into_token;
-//     PunctuatedIdents fields;
-//     Keyword values_token;
-//     PunctuatedLiterals values;
-//     Semi semi_token;
-// } StatementInsert;
+typedef struct {
+    Keyword insert_token;
+    Keyword into_token;
+    Ident table;
+    PunctuatedIdents fields;
+    Keyword values_token;
+    PunctuatedLiterals values;
+    Semi semi_token;
+} StatementInsert;
 
 typedef enum {
     STATEMENT_TYPE_SELECT,
-    // STATEMENT_TYPE_INSERT,
+    STATEMENT_TYPE_INSERT,
 } StatementType;
 
 typedef struct {
     StatementType type;
     union {
         StatementSelect select;
-        // StatementInsert insert;
+        StatementInsert insert;
     } statement;
 } Statement;
 
@@ -111,6 +112,8 @@ void StatementVector_free(StatementVector *v);
 AstParseResult Ast_parse(AsciiStr input);
 AstParseResultType AstStatementSelect_parse(TokenVectorIter *iter,
                                             StatementVector *statements);
+AstParseResultType AstStatementInsert_parse(TokenVectorIter *iter,
+                                            StatementVector *statements);
 AstParseResultType Punctuated_parse(TokenVectorIter *iter,
                                     Punctuated *punctuated,
                                     TokenType token_type);
@@ -125,6 +128,7 @@ bool ast_try_parse_token(TokenVectorIter *iter, Token *target,
 void Ast_print(Ast *ast);
 void Statement_print(Statement *statement);
 void StatementSelect_print(StatementSelect *statement);
+void StatementInsert_print(StatementInsert *statement);
 void Punctuated_print(Punctuated *punctuated);
 
 #endif // !AST_H
