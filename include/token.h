@@ -131,8 +131,8 @@ void TokenVector_free(TokenVector *v);
 
 // TokenVector:
 
-Token *TokenVectorIter_next(TokenVectorIter *iter);
-Token *TokenVectorIter_peek(TokenVectorIter *iter);
+Token TokenVectorIter_next(TokenVectorIter *iter);
+Token TokenVectorIter_peek(TokenVectorIter *iter);
 void TokenVectorIter_context_enter(TokenVectorIter *iter);
 void TokenVectorIter_context_exit(TokenVectorIter *iter);
 

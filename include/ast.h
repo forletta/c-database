@@ -22,7 +22,7 @@ typedef struct {
     // PunctuatedIdents fields;
     // Keyword from_token;
     // Ident table;
-    // Semi semi_token;
+    Semi semi_token;
 } StatementSelect;
 
 // typedef struct {

@@ -40,7 +40,7 @@ AstParseResult Ast_parse(AsciiStr input) {
         AstStatementSelect_parse,
     };
 
-    while (TokenVectorIter_peek(&iter) != NULL) {
+    while (TokenVectorIter_peek(&iter).type != TOKEN_TYPE_NULL) {
         AstParseResultType statement_parse_result = {};
 
         for (size_t i = 0; i < 1; i++) {
@@ -64,8 +64,14 @@ AstParseResultType AstStatementSelect_parse(TokenVectorIter *iter,
     TokenVectorIter_context_enter(iter);
     StatementSelect select_statement = {};
 
-    if ((select_statement.select_token = *TokenVectorIter_next(iter)).type !=
+    if ((select_statement.select_token = TokenVectorIter_next(iter)).type !=
         TOKEN_TYPE_KW_SELECT) {
+        TokenVectorIter_context_exit(iter);
+        return AST_PARSE_ERR;
+    }
+
+    if ((select_statement.semi_token = TokenVectorIter_next(iter)).type !=
+        TOKEN_TYPE_SEMI) {
         TokenVectorIter_context_exit(iter);
         return AST_PARSE_ERR;
     }
@@ -85,6 +91,8 @@ void Ast_print(Ast *ast) {
 
     for (size_t i = 0; i < ast->statements.len; i++) {
         Statement_print(StatementVector_get(&ast->statements, i));
+        if (i < ast->statements.len - 1)
+            printf(", ");
     }
 
     printf("] }\n");

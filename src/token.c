@@ -19,24 +19,29 @@ void TokenVector_push(TokenVector *v, Token *token) {
 
     v->ptr[v->len++] = *token;
 }
+
 void TokenVector_free(TokenVector *v) {
     VoidVector_free((VoidVector *)v);
 }
 
 // TokenVector:
 
-Token *TokenVectorIter_next(TokenVectorIter *iter) {
-    if (iter->cursor >= iter->stream->len)
-        return NULL;
+Token TokenVectorIter_next(TokenVectorIter *iter) {
+    Token null_token = {};
 
-    return TokenVector_get(iter->stream, iter->cursor++);
+    if (iter->cursor >= iter->stream->len)
+        return null_token;
+
+    return *TokenVector_get(iter->stream, iter->cursor++);
 }
 
-Token *TokenVectorIter_peek(TokenVectorIter *iter) {
-    if (iter->cursor >= iter->stream->len)
-        return NULL;
+Token TokenVectorIter_peek(TokenVectorIter *iter) {
+    Token null_token = {};
 
-    return TokenVector_get(iter->stream, iter->cursor);
+    if (iter->cursor >= iter->stream->len)
+        return null_token;
+
+    return *TokenVector_get(iter->stream, iter->cursor);
 }
 
 void TokenVectorIter_context_enter(TokenVectorIter *iter) {
