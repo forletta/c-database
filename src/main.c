@@ -48,6 +48,8 @@ int main(int argc, char *argv[]) {
         AstParseResult result = Ast_parse(AsciiString_asstr(&input));
 
         printf("%s\n", result.type == AST_PARSE_OK ? "ok" : "err");
+        if (result.type == AST_PARSE_OK)
+            Ast_print(&result.ast.ok);
 
         // Statement statement;
         // switch (parse_statement(AsciiString_asstr(&input), &statement)) {

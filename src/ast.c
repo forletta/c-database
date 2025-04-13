@@ -1,8 +1,17 @@
 #include "ast.h"
+#include "c_core_error.h"
 #include "token.h"
 #include "void_vector.h"
+#include <stdio.h>
 
 // StatementVector:
+
+Statement *StatementVector_get(const StatementVector *v, size_t i) {
+    if (i < v->len)
+        return v->ptr + i;
+
+    out_of_bounds();
+}
 
 void StatementVector_push(StatementVector *v, Statement *statement) {
     
@@ -49,6 +58,7 @@ AstParseResult Ast_parse(AsciiStr input) {
     result.type = AST_PARSE_OK;
     return result;
 }
+
 AstParseResultType AstStatementSelect_parse(TokenVectorIter *iter,
                                             StatementVector *statements) {
     TokenVectorIter_context_enter(iter);
@@ -66,4 +76,35 @@ AstParseResultType AstStatementSelect_parse(TokenVectorIter *iter,
     };
     StatementVector_push(statements, &statement);
     return AST_PARSE_OK;
+}
+
+// Printing:
+
+void Ast_print(Ast *ast) {
+    printf("Ast { .statements = [");
+
+    for (size_t i = 0; i < ast->statements.len; i++) {
+        Statement_print(StatementVector_get(&ast->statements, i));
+    }
+
+    printf("] }\n");
+}
+
+void Statement_print(Statement *statement) {
+    printf("Statement { .type = %s, .statement = ", STATEMENT_TYPES[statement->type]);
+
+    switch (statement->type) {
+        case STATEMENT_TYPE_SELECT:
+            StatementSelect_print(&statement->statement.select);
+    }
+
+    printf(" }");
+}
+
+void StatementSelect_print(StatementSelect *statement) {
+    printf("StatementSelect { .select_token = ");
+
+    Token_print(&statement->select_token);
+
+    printf(" }");
 }
