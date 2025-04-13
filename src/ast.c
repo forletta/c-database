@@ -73,6 +73,17 @@ AstParseResultType AstStatementSelect_parse(TokenVectorIter *iter,
         AST_PARSE_ERR)
         return AST_PARSE_ERR;
 
+    if (!ast_try_parse_token(iter, &select_statement.from_token,
+                             TOKEN_TYPE_KW_FROM)) {
+        TokenVectorIter_context_exit(iter);
+        return AST_PARSE_ERR;
+    }
+
+    if (!ast_try_parse_token(iter, &select_statement.table, TOKEN_TYPE_IDENT)) {
+        TokenVectorIter_context_exit(iter);
+        return AST_PARSE_ERR;
+    }
+
     if (!ast_try_parse_token(iter, &select_statement.semi_token,
                              TOKEN_TYPE_SEMI)) {
         TokenVectorIter_context_exit(iter);
@@ -120,17 +131,6 @@ AstParseResultType Punctuated_parse(TokenVectorIter *iter,
     }
 
     return AST_PARSE_OK;
-
-    // while ((token = TokenVectorIter_peek(iter)).type != TOKEN_TYPE_NULL) {
-    //     if (token.type != token_type && token.type != TOKEN_TYPE_COMMA) {
-    //         break;
-    //     }
-    //
-    //     TokenVector *tokens = token.type == token_type ? &punctuated->tokens
-    //                                                    : &punctuated->commas;
-    //     TokenVector_push(tokens, &token);
-    //     TokenVectorIter_next(iter);
-    // }
 }
 
 bool ast_try_parse_token(TokenVectorIter *iter, Token *target,
@@ -175,6 +175,12 @@ void StatementSelect_print(StatementSelect *statement) {
 
     printf(", .fields = ");
     Punctuated_print(&statement->fields);
+
+    printf(", .from_token = ");
+    Token_print(&statement->from_token);
+
+    printf(", .table = ");
+    Token_print(&statement->table);
 
     printf(", .semi_token = ");
     Token_print(&statement->semi_token);

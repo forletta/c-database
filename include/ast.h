@@ -20,8 +20,8 @@ typedef Token Ident;
 typedef struct {
     Keyword select_token;
     PunctuatedIdents fields;
-    // Keyword from_token;
-    // Ident table;
+    Keyword from_token;
+    Ident table;
     Semi semi_token;
 } StatementSelect;
 
