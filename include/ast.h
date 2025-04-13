@@ -6,7 +6,7 @@
 #include <stdbool.h>
 
 typedef struct {
-    Token prens[2];
+    // Token prens[2];
     TokenVector tokens;
     TokenVector commas;
 } Punctuated;
@@ -19,7 +19,7 @@ typedef Token Ident;
 
 typedef struct {
     Keyword select_token;
-    // PunctuatedIdents fields;
+    PunctuatedIdents fields;
     // Keyword from_token;
     // Ident table;
     Semi semi_token;
@@ -110,14 +110,21 @@ void StatementVector_free(StatementVector *v);
 
 AstParseResult Ast_parse(AsciiStr input);
 AstParseResultType AstStatementSelect_parse(TokenVectorIter *iter,
-                                                 StatementVector *statements);
+                                            StatementVector *statements);
+AstParseResultType Punctuated_parse(TokenVectorIter *iter,
+                                    Punctuated *punctuated,
+                                    TokenType token_type);
 // AstParseStatementResult ast_parse_statement_insert(TokenVectorIter *iter);
 // AstParsePunctuatedResult ast_parse_punctuated_idents(TokenVectorIter *iter);
+
+bool ast_try_parse_token(TokenVectorIter *iter, Token *target,
+                         TokenType token_type);
 
 // Printing:
 
 void Ast_print(Ast *ast);
 void Statement_print(Statement *statement);
 void StatementSelect_print(StatementSelect *statement);
+void Punctuated_print(Punctuated *punctuated);
 
 #endif // !AST_H

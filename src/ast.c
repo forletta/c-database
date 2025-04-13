@@ -14,7 +14,7 @@ Statement *StatementVector_get(const StatementVector *v, size_t i) {
 }
 
 void StatementVector_push(StatementVector *v, Statement *statement) {
-    
+
     VoidVector_ensure_capacity((VoidVector *)v, sizeof(Token), 1);
 
     v->ptr[v->len++] = *statement;
@@ -64,14 +64,17 @@ AstParseResultType AstStatementSelect_parse(TokenVectorIter *iter,
     TokenVectorIter_context_enter(iter);
     StatementSelect select_statement = {};
 
-    if ((select_statement.select_token = TokenVectorIter_next(iter)).type !=
-        TOKEN_TYPE_KW_SELECT) {
-        TokenVectorIter_context_exit(iter);
+    if (!ast_try_parse_token(iter, &select_statement.select_token,
+                             TOKEN_TYPE_KW_SELECT)) {
         return AST_PARSE_ERR;
     }
 
-    if ((select_statement.semi_token = TokenVectorIter_next(iter)).type !=
-        TOKEN_TYPE_SEMI) {
+    if (Punctuated_parse(iter, &select_statement.fields, TOKEN_TYPE_IDENT) ==
+        AST_PARSE_ERR)
+        return AST_PARSE_ERR;
+
+    if (!ast_try_parse_token(iter, &select_statement.semi_token,
+                             TOKEN_TYPE_SEMI)) {
         TokenVectorIter_context_exit(iter);
         return AST_PARSE_ERR;
     }
@@ -84,10 +87,66 @@ AstParseResultType AstStatementSelect_parse(TokenVectorIter *iter,
     return AST_PARSE_OK;
 }
 
+AstParseResultType Punctuated_parse(TokenVectorIter *iter,
+                                    Punctuated *punctuated,
+                                    TokenType token_type) {
+    Token token;
+
+    if (!ast_try_parse_token(iter, &token, token_type)) {
+        return AST_PARSE_ERR;
+    }
+
+    TokenVector_push(&punctuated->tokens, &token);
+    bool expecting_ident = false;
+
+    while ((token = TokenVectorIter_peek(iter)).type != TOKEN_TYPE_NULL) {
+        if (expecting_ident && token.type == TOKEN_TYPE_IDENT) {
+            TokenVector_push(&punctuated->tokens, &token);
+            expecting_ident = false;
+
+            TokenVectorIter_next(iter);
+            continue;
+        }
+
+        if (!expecting_ident && token.type == TOKEN_TYPE_COMMA) {
+            TokenVector_push(&punctuated->commas, &token);
+            expecting_ident = true;
+
+            TokenVectorIter_next(iter);
+            continue;
+        }
+
+        break;
+    }
+
+    return AST_PARSE_OK;
+
+    // while ((token = TokenVectorIter_peek(iter)).type != TOKEN_TYPE_NULL) {
+    //     if (token.type != token_type && token.type != TOKEN_TYPE_COMMA) {
+    //         break;
+    //     }
+    //
+    //     TokenVector *tokens = token.type == token_type ? &punctuated->tokens
+    //                                                    : &punctuated->commas;
+    //     TokenVector_push(tokens, &token);
+    //     TokenVectorIter_next(iter);
+    // }
+}
+
+bool ast_try_parse_token(TokenVectorIter *iter, Token *target,
+                         TokenType token_type) {
+    if ((*target = TokenVectorIter_next(iter)).type != token_type) {
+        TokenVectorIter_context_exit(iter);
+        return false;
+    }
+
+    return true;
+}
+
 // Printing:
 
 void Ast_print(Ast *ast) {
-    printf("Ast { .statements = [");
+    printf("Ast {.statements = [");
 
     for (size_t i = 0; i < ast->statements.len; i++) {
         Statement_print(StatementVector_get(&ast->statements, i));
@@ -95,24 +154,42 @@ void Ast_print(Ast *ast) {
             printf(", ");
     }
 
-    printf("] }\n");
+    printf("]}\n");
 }
 
 void Statement_print(Statement *statement) {
-    printf("Statement { .type = %s, .statement = ", STATEMENT_TYPES[statement->type]);
+    printf("Statement {.type = %s, .statement = ",
+           STATEMENT_TYPES[statement->type]);
 
     switch (statement->type) {
-        case STATEMENT_TYPE_SELECT:
-            StatementSelect_print(&statement->statement.select);
+    case STATEMENT_TYPE_SELECT:
+        StatementSelect_print(&statement->statement.select);
     }
 
-    printf(" }");
+    printf("}");
 }
 
 void StatementSelect_print(StatementSelect *statement) {
-    printf("StatementSelect { .select_token = ");
-
+    printf("StatementSelect {.select_token = ");
     Token_print(&statement->select_token);
 
-    printf(" }");
+    printf(", .fields = ");
+    Punctuated_print(&statement->fields);
+
+    printf(", .semi_token = ");
+    Token_print(&statement->semi_token);
+
+    printf("}");
+}
+
+void Punctuated_print(Punctuated *punctuated) {
+    printf("Punctuated {.tokens = [");
+
+    for (size_t i = 0; i < punctuated->tokens.len; i++) {
+        Token_print(TokenVector_get(&punctuated->tokens, i));
+        if (i < punctuated->tokens.len - 1)
+            printf(", ");
+    }
+
+    printf("]}");
 }
