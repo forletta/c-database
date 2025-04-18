@@ -1,3 +1,4 @@
 [submodule "external/c-core"]
 	path = external/c-core
 	url = https://github.com/forletta/c-core.git
+	branch = simplified

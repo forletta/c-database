@@ -1,42 +1,19 @@
-#include "ascii_string.h"
-// #include "command.h"
-#include "ast.h"
-#include "command.h"
 #include "io.h"
 #include "meta_command.h"
-#include "table.h"
-#include <stdbool.h>
+#include "token.h"
 #include <stdio.h>
 
 void print_prompt() { printf("db > "); }
 
 int main(int argc, char *argv[]) {
-    AsciiString input = {};
-
-    // size_t fieldc = 2;
-    // char *field_names[2] = {"Name", "Age"};
-    // FieldDataType field_data_types[2] = {
-    //     {.type = FIELD_DATA_TYPE_CHAR,
-    //      .metadata = {.char_type =
-    //                       {
-    //                           .capacity = 20,
-    //                       }}},
-    //     {.type = FIELD_DATA_TYPE_INT, .metadata = {}}};
-    // TableSchema example_schema = {
-    //     .fieldc = fieldc,
-    //     .field_names = field_names,
-    //     .field_data_types = field_data_types,
-    // };
-    //
-    // print_schema(&example_schema);
-    // printf("\n");
+    charArray input = {};
 
     while (true) {
         print_prompt();
         io_getline(&input, stdin);
 
-        if (*AsciiString_get(&input, 0) == '.') {
-            switch (exec_meta_command(AsciiString_asstr(&input))) {
+        if (*charArray_get(&input, 0) == '.') {
+            switch (exec_meta_command(input)) {
             case META_COMMAND_SUCCESS:
                 continue;
             case META_COMMAND_UNRECOGNIZED_COMMAND:
@@ -46,29 +23,43 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        AstParseResult ast_parse_result = Ast_parse(AsciiString_asstr(&input));
+        TokenArray stream = {};
 
-        if (ast_parse_result.type != AST_PARSE_OK) {
-            printf("Failed to parse statement: %.*s\n", (int)input.len,
+        if (token_parse(&stream, &input) == TOKENIZE_FAILURE)
+            printf("Failed to tokenize input: %.*s\n", (int)input.len,
                    input.ptr);
-            continue;
-        }
 
-        Ast ast = ast_parse_result.ast.ok;
-
-        Ast_print(&ast);
-
-        printf("\n");
-
-        CommandVector commands = {};
-
-        Command_parse(&commands, &ast);
-
-        for (size_t i = 0; i < commands.len; i++) {
-            Command *command = CommandVector_get(&commands, i);
-            Command_print(command);
+        TokenArrayIter stream_iter = TokenArrayIter_create(&stream);
+        Token *t;
+        while ((t = TokenArrayIter_next(&stream_iter)) != NULL) {
+            Token_print(t);
             printf("\n");
         }
+
+        // AstParseResult ast_parse_result =
+        // Ast_parse(AsciiString_asstr(&input));
+        //
+        // if (ast_parse_result.type != AST_PARSE_OK) {
+        //     printf("Failed to parse statement: %.*s\n", (int)input.len,
+        //            input.ptr);
+        //     continue;
+        // }
+        //
+        // Ast ast = ast_parse_result.ast.ok;
+        //
+        // Ast_print(&ast);
+        //
+        // printf("\n");
+        //
+        // CommandVector commands = {};
+        //
+        // Command_parse(&commands, &ast);
+        //
+        // for (size_t i = 0; i < commands.len; i++) {
+        //     Command *command = CommandVector_get(&commands, i);
+        //     Command_print(command);
+        //     printf("\n");
+        // }
 
         // printf("%s\n", result.type == AST_PARSE_OK ? "ok" : "err");
         // if (result.type == AST_PARSE_OK)

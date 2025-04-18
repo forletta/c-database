@@ -1,5 +1,5 @@
 CC := clang
-CFLAGS := -std=c11 -g -Wall -Werror
+CFLAGS := -std=c23 -g -Wall -Werror
 
 BUILD_DIR := build
 SRC_DIRS := src external/c-core/src
