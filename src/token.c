@@ -7,20 +7,44 @@
 
 // TokenVector:
 
-Token *TokenVector_get(const TokenVector *v, size_t i) {
-    if (i < v->len)
-        return v->ptr + i;
+// Token *TokenVector_get(const TokenVector *v, size_t i) {
+//     if (i < v->len)
+//         return v->ptr + i;
+//
+//     out_of_bounds();
+// }
+//
+// void TokenVector_push(TokenVector *v, Token *token) {
+//     VoidVector_ensure_capacity((VoidVector *)v, sizeof(Token), 1);
+//
+//     v->ptr[v->len++] = *token;
+// }
+//
+// void TokenVector_free(TokenVector *v) { VoidVector_free((VoidVector *)v); }
 
-    out_of_bounds();
+VoidVector TokenVector_as_void_vector(TokenVector *v) {
+    VoidVector void_v = {
+        .ptr = (void **)&v->ptr,
+        .len = &v->len,
+        .cap = &v->cap,
+        .element_size = sizeof(Token),
+    };
+
+    return void_v;
+}
+
+Token *TokenVector_get(TokenVector *v, size_t i) {
+    VoidVector void_v = TokenVector_as_void_vector(v);
+
+    return VoidVector_get(&void_v, i);
 }
 
 void TokenVector_push(TokenVector *v, Token *token) {
-    VoidVector_ensure_capacity((VoidVector *)v, sizeof(Token), 1);
+    VoidVector void_v = TokenVector_as_void_vector(v);
 
-    v->ptr[v->len++] = *token;
+    *(Token *)VoidVector_push(&void_v) = *token;
 }
 
-void TokenVector_free(TokenVector *v) { VoidVector_free((VoidVector *)v); }
 
 // TokenVector:
 

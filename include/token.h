@@ -127,7 +127,7 @@ static const TokenKeword TOKEN_KEYWORDS[TOKEN_KEYWORDS_LEN] = {
 
 // TokenVector:
 
-Token *TokenVector_get(const TokenVector *v, size_t i);
+Token *TokenVector_get(TokenVector *v, size_t i);
 void TokenVector_push(TokenVector *v, Token *token);
 void TokenVector_free(TokenVector *v);
 

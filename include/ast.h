@@ -103,7 +103,7 @@ static const char *STATEMENT_TYPES[STATEMENT_TYPES_LEN] = {
 };
 // StatementVector:
 
-Statement *StatementVector_get(const StatementVector *v, size_t i);
+Statement *StatementVector_get(StatementVector *v, size_t i);
 void StatementVector_push(StatementVector *v, Statement *statement);
 void StatementVector_free(StatementVector *v);
 

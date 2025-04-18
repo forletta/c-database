@@ -1,6 +1,7 @@
 #include "ascii_string.h"
 // #include "command.h"
 #include "ast.h"
+#include "command.h"
 #include "io.h"
 #include "meta_command.h"
 #include "table.h"
@@ -12,23 +13,23 @@ void print_prompt() { printf("db > "); }
 int main(int argc, char *argv[]) {
     AsciiString input = {};
 
-    size_t fieldc = 2;
-    char *field_names[2] = {"Name", "Age"};
-    FieldDataType field_data_types[2] = {
-        {.type = FIELD_DATA_TYPE_CHAR,
-         .metadata = {.char_type =
-                          {
-                              .capacity = 20,
-                          }}},
-        {.type = FIELD_DATA_TYPE_INT, .metadata = {}}};
-    TableSchema example_schema = {
-        .fieldc = fieldc,
-        .field_names = field_names,
-        .field_data_types = field_data_types,
-    };
-
-    print_schema(&example_schema);
-    printf("\n");
+    // size_t fieldc = 2;
+    // char *field_names[2] = {"Name", "Age"};
+    // FieldDataType field_data_types[2] = {
+    //     {.type = FIELD_DATA_TYPE_CHAR,
+    //      .metadata = {.char_type =
+    //                       {
+    //                           .capacity = 20,
+    //                       }}},
+    //     {.type = FIELD_DATA_TYPE_INT, .metadata = {}}};
+    // TableSchema example_schema = {
+    //     .fieldc = fieldc,
+    //     .field_names = field_names,
+    //     .field_data_types = field_data_types,
+    // };
+    //
+    // print_schema(&example_schema);
+    // printf("\n");
 
     while (true) {
         print_prompt();
@@ -45,11 +46,33 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        AstParseResult result = Ast_parse(AsciiString_asstr(&input));
+        AstParseResult ast_parse_result = Ast_parse(AsciiString_asstr(&input));
 
-        printf("%s\n", result.type == AST_PARSE_OK ? "ok" : "err");
-        if (result.type == AST_PARSE_OK)
-            Ast_print(&result.ast.ok);
+        if (ast_parse_result.type != AST_PARSE_OK) {
+            printf("Failed to parse statement: %.*s\n", (int)input.len,
+                   input.ptr);
+            continue;
+        }
+
+        Ast ast = ast_parse_result.ast.ok;
+
+        Ast_print(&ast);
+
+        printf("\n");
+
+        CommandVector commands = {};
+
+        Command_parse(&commands, &ast);
+
+        for (size_t i = 0; i < commands.len; i++) {
+            Command *command = CommandVector_get(&commands, i);
+            Command_print(command);
+            printf("\n");
+        }
+
+        // printf("%s\n", result.type == AST_PARSE_OK ? "ok" : "err");
+        // if (result.type == AST_PARSE_OK)
+        //     Ast_print(&result.ast.ok);
 
         // Statement statement;
         // switch (parse_statement(AsciiString_asstr(&input), &statement)) {

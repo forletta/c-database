@@ -6,18 +6,27 @@
 
 // StatementVector:
 
-Statement *StatementVector_get(const StatementVector *v, size_t i) {
-    if (i < v->len)
-        return v->ptr + i;
+VoidVector StatementVector_as_void_vector(StatementVector *v) {
+    VoidVector void_v = {
+        .ptr = (void **)&v->ptr,
+        .len = &v->len,
+        .cap = &v->cap,
+        .element_size = sizeof(Statement),
+    };
 
-    out_of_bounds();
+    return void_v;
+}
+
+Statement *StatementVector_get(StatementVector *v, size_t i) {
+    VoidVector void_v = StatementVector_as_void_vector(v);
+
+    return VoidVector_get(&void_v, i);
 }
 
 void StatementVector_push(StatementVector *v, Statement *statement) {
+    VoidVector void_v = StatementVector_as_void_vector(v);
 
-    VoidVector_ensure_capacity((VoidVector *)v, sizeof(Token), 1);
-
-    v->ptr[v->len++] = *statement;
+    *(Statement *)VoidVector_push(&void_v) = *statement;
 }
 
 // Parsing:
@@ -149,7 +158,7 @@ AstParseResultType AstStatementInsert_parse(TokenVectorIter *iter,
 AstParseResultType Punctuated_parse(TokenVectorIter *iter,
                                     Punctuated *punctuated,
                                     TokenType token_type) {
-    Token token;
+    Token token = {};
 
     bool parenthesized = false;
     bool parentheses_closed = false;

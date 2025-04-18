@@ -2,23 +2,46 @@
 #define COMMAND_H
 
 #include "ascii_string.h"
+#include "ast.h"
 
-typedef enum {
-    STATEMENT_TYPE_INSERT,
-    STATEMENT_TYPE_SELECT,
-} StatementType;
+typedef struct {
+    AsciiString table;
+    AsciiStringVector fields;
+} CommandSelect;
 
 typedef struct {
     StatementType type;
-} Statement;
+    union {
+        CommandSelect select;
+        // CommandInsert insert;
+    } command;
+} Command;
+
+typedef struct {
+    Command *ptr;
+    size_t len;
+    size_t cap;
+} CommandVector;
 
 typedef enum {
-    PARSE_STATEMENT_SUCCESS,
-    PARSE_STATEMTNT_UNRECOGNIZED_STATEMENT,
-} ParseStatementResult;
+    COMMAND_PARSE_ERR,
+    COMMAND_PARSE_OK,
+} CommandParseResult;
 
-ParseStatementResult parse_statement(AsciiStr input, Statement *statement);
+// CommandVector:
 
-void exec_statement(Statement *statement);
+Command *CommandVector_get(CommandVector *v, size_t i);
+void CommandVector_push(CommandVector *v, Command *command);
+void CommandVector_free(CommandVector *v);
+
+// Command:
+
+CommandParseResult Command_parse(CommandVector *commands, Ast *ast);
+CommandParseResult CommandSelect_parse(CommandVector *commands, StatementSelect *statement);
+
+// Printing:
+
+void Command_print(Command *command);
+void CommandSelect_print(CommandSelect *command);
 
 #endif // !COMMAND_H
