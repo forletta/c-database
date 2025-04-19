@@ -38,10 +38,12 @@ int main(int argc, char *argv[]) {
             printf("\n");
         }
 
+        printf("\n");
+
         AstParseResult ast_parse_result = Ast_parse(&input);
 
         if (ast_parse_result.type != AST_PARSE_OK) {
-            printf("Failed to parse statement: %.*s\n", (int)input.len,
+            printf("Failed to parse token stream: %.*s\n", (int)input.len,
                    input.ptr);
             continue;
         }
@@ -54,7 +56,8 @@ int main(int argc, char *argv[]) {
 
         CommandArray commands = {};
 
-        Command_parse(&commands, &ast);
+        if (Command_parse(&commands, &ast) == COMMAND_PARSE_ERR)
+            printf("Failed to parse ast: %.*s\n", (int)input.len, input.ptr);
 
         for (size_t i = 0; i < commands.len; i++) {
             Command *command = CommandArray_get(&commands, i);
@@ -62,21 +65,7 @@ int main(int argc, char *argv[]) {
             printf("\n");
         }
 
-        // printf("%s\n", result.type == AST_PARSE_OK ? "ok" : "err");
-        // if (result.type == AST_PARSE_OK)
-        //     Ast_print(&result.ast.ok);
-
-        // Statement statement;
-        // switch (parse_statement(AsciiString_asstr(&input), &statement)) {
-        // case PARSE_STATEMENT_SUCCESS:
-        //     break;
-        // case PARSE_STATEMTNT_UNRECOGNIZED_STATEMENT:
-        //     printf("Failed to parse statement: %.*s\n", (int)input.len,
-        //            input.ptr);
-        //     continue;
-        // }
-        //
-        // exec_statement(&statement);
+        printf("\n");
     }
 
     return 0;

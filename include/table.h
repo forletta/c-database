@@ -1,6 +1,7 @@
 // #ifndef TABLE_H
 // #define TABLE_H
 //
+// #include "char_array.h"
 // #include <stddef.h>
 //
 // typedef struct {
@@ -15,8 +16,15 @@
 //             size_t capacity;
 //         } char_type;
 //     } metadata;
-//
 // } FieldDataType;
+//
+// typedef struct {
+//     FieldDataType data_type;
+//     union {
+//         int int_type;
+//         charArray char_type;
+//     } data;
+// } Field;
 //
 // typedef struct {
 //     size_t fieldc;
