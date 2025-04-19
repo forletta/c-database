@@ -1,3 +1,4 @@
+#include "ast.h"
 #include "io.h"
 #include "meta_command.h"
 #include "token.h"
@@ -36,21 +37,20 @@ int main(int argc, char *argv[]) {
             printf("\n");
         }
 
-        // AstParseResult ast_parse_result =
-        // Ast_parse(AsciiString_asstr(&input));
-        //
-        // if (ast_parse_result.type != AST_PARSE_OK) {
-        //     printf("Failed to parse statement: %.*s\n", (int)input.len,
-        //            input.ptr);
-        //     continue;
-        // }
-        //
-        // Ast ast = ast_parse_result.ast.ok;
-        //
-        // Ast_print(&ast);
-        //
-        // printf("\n");
-        //
+        AstParseResult ast_parse_result = Ast_parse(&input);
+
+        if (ast_parse_result.type != AST_PARSE_OK) {
+            printf("Failed to parse statement: %.*s\n", (int)input.len,
+                   input.ptr);
+            continue;
+        }
+
+        Ast ast = ast_parse_result.ast.ok;
+
+        Ast_print(&ast);
+
+        printf("\n");
+
         // CommandVector commands = {};
         //
         // Command_parse(&commands, &ast);
