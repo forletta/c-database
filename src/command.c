@@ -7,18 +7,27 @@ ARRAY_IMPL(Command);
 
 // Command:
 
-ParseResult Command_parse(CommandArray *commands, Ast *ast) {
-    for (size_t i = 0; i < ast->statements.len; i++) {
-        Statement *statement = StatementArray_get(&ast->statements, i);
+ParseResult command_parse_input(CommandArray *commands, charArray *input) {
+    TokenArray stream = {};
+    TRY_PARSE(token_parse(&stream, input));
+
+    StatementArray statements = {};
+    TRY_PARSE(statement_parse(&statements, &stream));
+
+    TRY_PARSE(command_parse(commands, &statements));
+
+    return PARSE_OK;
+}
+
+ParseResult command_parse(CommandArray *commands, StatementArray *statements) {
+    for (size_t i = 0; i < statements->len; i++) {
+        Statement *statement = StatementArray_get(statements, i);
 
         switch (statement->type) {
         case STATEMENT_TYPE_SELECT:
             return CommandSelect_parse(commands, &statement->statement.select);
         case STATEMENT_TYPE_INSERT:
             return CommandInsert_parse(commands, &statement->statement.insert);
-        default:
-            printf("Command type unimplemented\n");
-            return PARSE_ERR;
         }
     }
 
@@ -26,7 +35,7 @@ ParseResult Command_parse(CommandArray *commands, Ast *ast) {
 }
 
 ParseResult CommandSelect_parse(CommandArray *commands,
-                                       StatementSelect *statement) {
+                                StatementSelect *statement) {
     CommandSelect select_command = {};
 
     select_command.table = charArray_copy(&statement->table.slice);
@@ -44,7 +53,7 @@ ParseResult CommandSelect_parse(CommandArray *commands,
 }
 
 ParseResult CommandInsert_parse(CommandArray *commands,
-                                       StatementInsert *statement) {
+                                StatementInsert *statement) {
 
     CommandInsert insert_command = {};
 
@@ -60,8 +69,7 @@ ParseResult CommandInsert_parse(CommandArray *commands,
         Token *token = TokenArray_get(&statement->values.tokens, i);
 
         ValueParseResult result;
-        if ((result = Value_parse(token)).err == VALUE_PARSE_ERR)
-            return PARSE_ERR;
+        TRY_PARSE((result = Value_parse(token)).err);
 
         ValueArray_push(&insert_command.values, &result.value.ok);
     }
@@ -82,8 +90,6 @@ void Command_print(Command *command) {
     case STATEMENT_TYPE_INSERT:
         CommandInsert_print(&command->command.insert);
         break;
-    default:
-        printf("Command statement type not implemented\n");
     }
 }
 

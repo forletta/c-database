@@ -3,6 +3,7 @@
 
 #include "array.h"
 #include "char_array.h"
+#include "parse.h"
 #include "token.h"
 #include <stddef.h>
 #include <stdint.h>
@@ -34,10 +35,7 @@ typedef struct {
 ARRAY(Value);
 
 typedef struct {
-    enum {
-        VALUE_PARSE_ERR,
-        VALUE_PARSE_OK,
-    } err;
+    ParseResult err;
     union {
         struct {
         } err;

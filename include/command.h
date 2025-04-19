@@ -2,7 +2,7 @@
 #define COMMAND_H
 
 #include "array.h"
-#include "ast.h"
+#include "statement.h"
 #include "value.h"
 
 ARRAY(charArray);
@@ -30,7 +30,8 @@ ARRAY(Command);
 
 // Command:
 
-ParseResult Command_parse(CommandArray *commands, Ast *ast);
+ParseResult command_parse_input(CommandArray *commands, charArray *input);
+ParseResult command_parse(CommandArray *commands, StatementArray *statements);
 ParseResult CommandSelect_parse(CommandArray *commands,
                                 StatementSelect *statement);
 ParseResult CommandInsert_parse(CommandArray *commands,

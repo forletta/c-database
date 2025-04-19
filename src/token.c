@@ -55,9 +55,7 @@ ParseResult token_parse(TokenArray *stream, charArray *input) {
             break;
         case '\'':
         case '"':
-            if (!token_parse_str(stream, &iter))
-                return PARSE_ERR;
-
+            TRY_PARSE(token_parse_str(stream, &iter));
             continue;
         default:
             if (isspace(*c))
@@ -87,9 +85,7 @@ ParseResult token_parse_str(TokenArray *stream, charArrayIter *iter) {
     while ((c = charArrayIter_next(iter)) != NULL) {
         switch (*c) {
         case '\\':
-            if ((c = charArrayIter_next(iter)) == NULL)
-                return PARSE_ERR;
-
+            TRY_PARSE((c = charArrayIter_next(iter)));
             break;
         case '\'':
         case '"':

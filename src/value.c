@@ -25,7 +25,7 @@ ValueParseResult Value_parse_num(charArray *str) {
     }
 
     return (ValueParseResult){
-        .err = VALUE_PARSE_OK,
+        .err = PARSE_OK,
         .value.ok.type =
             {
                 .type = VALUE_TYPE_INT,
@@ -77,7 +77,7 @@ ValueParseResult Value_parse_str(charArray *str) {
 
         if (*c == quote_type)
             return (ValueParseResult){
-                .err = VALUE_PARSE_OK,
+                .err = PARSE_OK,
                 .value.ok.type =
                     {
                         .type = VALUE_TYPE_CHAR,

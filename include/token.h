@@ -42,11 +42,6 @@ typedef struct {
 
 ARRAY(Token);
 
-// typedef enum {
-//     TOKEN_PARSE_ERR,
-//     TOKEN_PARSE_OK,
-// } TokenParseResult;
-
 typedef struct {
     TokenType token_type;
     charArray keyword;

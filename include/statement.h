@@ -50,20 +50,6 @@ typedef struct {
 
 ARRAY(Statement);
 
-typedef struct {
-    charArray input;
-    StatementArray statements;
-} Ast;
-
-typedef struct {
-    ParseResult type;
-    union {
-        struct {
-        } err;
-        Ast ok;
-    } ast;
-} AstParseResult;
-
 #define STATEMENT_TYPES_LEN 2
 static const char *STATEMENT_TYPES[STATEMENT_TYPES_LEN] = {
     "STATEMENT_TYPE_SELECT",
@@ -72,21 +58,20 @@ static const char *STATEMENT_TYPES[STATEMENT_TYPES_LEN] = {
 
 // Parsing:
 
-AstParseResult Ast_parse(charArray *input);
-ParseResult AstStatementSelect_parse(TokenArrayIter *iter,
-                                            StatementArray *statements);
-ParseResult AstStatementInsert_parse(TokenArrayIter *iter,
-                                            StatementArray *statements);
-ParseResult Punctuated_parse(TokenArrayIter *iter,
-                                    Punctuated *punctuated,
-                                    TokenType token_type);
+ParseResult statement_parse(StatementArray *statements, TokenArray *stream);
+ParseResult StatementSelect_parse(TokenArrayIter *iter,
+                                  StatementArray *statements);
+ParseResult StatementInsert_parse(TokenArrayIter *iter,
+                                  StatementArray *statements);
+ParseResult Punctuated_parse(TokenArrayIter *iter, Punctuated *punctuated,
+                             TokenType token_type);
 
 bool ast_try_parse_token(TokenArrayIter *iter, Token *target,
                          TokenType token_type);
 
 // Printing:
 
-void Ast_print(Ast *ast);
+void StatementArray_print(StatementArray *statements);
 void Statement_print(Statement *statement);
 void StatementSelect_print(StatementSelect *statement);
 void StatementInsert_print(StatementInsert *statement);

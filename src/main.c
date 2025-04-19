@@ -1,8 +1,6 @@
-#include "ast.h"
 #include "command.h"
 #include "io.h"
 #include "meta_command.h"
-#include "token.h"
 #include <stdio.h>
 
 void print_prompt() { printf("db > "); }
@@ -25,47 +23,18 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        TokenArray stream = {};
-
-        if (!token_parse(&stream, &input))
-            printf("Failed to tokenize input: %.*s\n", (int)input.len,
-                   input.ptr);
-
-        TokenArrayIter stream_iter = TokenArrayIter_create(&stream);
-        Token *t;
-        while ((t = TokenArrayIter_next(&stream_iter)) != NULL) {
-            Token_print(t);
-            printf("\n");
-        }
-
-        printf("\n");
-
-        AstParseResult ast_parse_result = Ast_parse(&input);
-
-        if (!ast_parse_result.type) {
-            printf("Failed to parse token stream: %.*s\n", (int)input.len,
-                   input.ptr);
-            continue;
-        }
-
-        Ast ast = ast_parse_result.ast.ok;
-
-        Ast_print(&ast);
-
-        printf("\n");
-
         CommandArray commands = {};
 
-        if (!Command_parse(&commands, &ast))
-            printf("Failed to parse ast: %.*s\n", (int)input.len, input.ptr);
+        if (!command_parse_input(&commands, &input)) {
+            printf("Failed to parse input\n");
+            continue;
+        }
 
         for (size_t i = 0; i < commands.len; i++) {
             Command *command = CommandArray_get(&commands, i);
             Command_print(command);
             printf("\n");
         }
-
-        printf("\n");
     }
 
     return 0;

@@ -1,5 +1,4 @@
-#include "ast.h"
-#include "token.h"
+#include "statement.h"
 #include <stdio.h>
 
 ARRAY_IMPL(Statement);
@@ -11,49 +10,43 @@ ARRAY_IMPL(Statement);
         return PARSE_ERR;
 
 #define AST_TRY_PARSE_PUNCTUATED(target, token_type)                           \
-    if (Punctuated_parse(iter, target, token_type) == PARSE_ERR)               \
+    if (!Punctuated_parse(iter, target, token_type))                           \
         return PARSE_ERR;
 
 // Parsing:
 
 typedef ParseResult (*AstStatementParser)(TokenArrayIter *, StatementArray *);
 
-AstParseResult Ast_parse(charArray *input) {
+ParseResult statement_parse(StatementArray *statements, TokenArray *stream) {
     static const AstStatementParser STATEMENT_PARSERS[2] = {
-        AstStatementSelect_parse,
-        AstStatementInsert_parse,
+        StatementSelect_parse,
+        StatementInsert_parse,
     };
 
-    TokenArray stream = {};
-    if (token_parse(&stream, input) == PARSE_ERR)
-        return (AstParseResult){};
-    TokenArrayIter iter = TokenArrayIter_create(&stream);
-
-    AstParseResult result = {.type = PARSE_OK};
+    TokenArrayIter iter = TokenArrayIter_create(stream);
 
     while (TokenArrayIter_peek(&iter) != NULL) {
-        ParseResult statement_parse_result = {};
+        ParseResult parse_result = {};
         size_t current_token_index = iter.cursor;
 
         for (size_t i = 0; i < 2; i++) {
             iter.cursor = current_token_index;
 
-            statement_parse_result =
-                STATEMENT_PARSERS[i](&iter, &result.ast.ok.statements);
+            parse_result = STATEMENT_PARSERS[i](&iter, statements);
 
-            if (statement_parse_result == PARSE_OK)
+            if (parse_result)
                 break;
         }
 
-        if (statement_parse_result == PARSE_ERR)
-            return (AstParseResult){};
+        if (!parse_result)
+            return PARSE_ERR;
     }
 
-    return result;
+    return PARSE_OK;
 }
 
-ParseResult AstStatementSelect_parse(TokenArrayIter *iter,
-                                     StatementArray *statements) {
+ParseResult StatementSelect_parse(TokenArrayIter *iter,
+                                  StatementArray *statements) {
     StatementSelect select_statement = {};
 
     AST_TRY_PARSE_TOKEN(&select_statement.select_token, TOKEN_TYPE_KW_SELECT);
@@ -62,17 +55,15 @@ ParseResult AstStatementSelect_parse(TokenArrayIter *iter,
     AST_TRY_PARSE_TOKEN(&select_statement.table, TOKEN_TYPE_IDENT);
     AST_TRY_PARSE_TOKEN(&select_statement.semi_token, TOKEN_TYPE_SEMI);
 
-    Statement statement = {
-        .type = STATEMENT_TYPE_SELECT,
-        .statement.select = select_statement,
-    };
-    StatementArray_push(statements, &statement);
+    StatementArray_push(statements,
+                        &(Statement){.type = STATEMENT_TYPE_SELECT,
+                                     .statement.select = select_statement});
 
     return PARSE_OK;
 }
 
-ParseResult AstStatementInsert_parse(TokenArrayIter *iter,
-                                     StatementArray *statements) {
+ParseResult StatementInsert_parse(TokenArrayIter *iter,
+                                  StatementArray *statements) {
     StatementInsert insert_statement = {};
 
     AST_TRY_PARSE_TOKEN(&insert_statement.insert_token, TOKEN_TYPE_KW_INSERT);
@@ -83,11 +74,9 @@ ParseResult AstStatementInsert_parse(TokenArrayIter *iter,
     AST_TRY_PARSE_PUNCTUATED(&insert_statement.values, TOKEN_TYPE_LIT);
     AST_TRY_PARSE_TOKEN(&insert_statement.semi_token, TOKEN_TYPE_SEMI);
 
-    Statement statement = {
-        .type = STATEMENT_TYPE_INSERT,
-        .statement.insert = insert_statement,
-    };
-    StatementArray_push(statements, &statement);
+    StatementArray_push(statements,
+                        &(Statement){.type = STATEMENT_TYPE_INSERT,
+                                     .statement.insert = insert_statement});
 
     return PARSE_OK;
 }
@@ -163,16 +152,16 @@ bool ast_try_parse_token(TokenArrayIter *iter, Token *target,
 
 // Printing:
 
-void Ast_print(Ast *ast) {
-    printf("Ast {statements = [");
+void StatementArray_print(StatementArray *statements) {
+    printf("StatementArray [");
 
-    for (size_t i = 0; i < ast->statements.len; i++) {
-        Statement_print(StatementArray_get(&ast->statements, i));
-        if (i < ast->statements.len - 1)
+    for (size_t i = 0; i < statements->len; i++) {
+        Statement_print(StatementArray_get(statements, i));
+        if (i < statements->len - 1)
             printf(", ");
     }
 
-    printf("]}\n");
+    printf("]\n");
 }
 
 void Statement_print(Statement *statement) {
