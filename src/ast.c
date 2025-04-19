@@ -8,16 +8,15 @@ ARRAY_IMPL(Statement);
 
 #define AST_TRY_PARSE_TOKEN(target, token_type)                                \
     if (!ast_try_parse_token(iter, target, token_type))                        \
-        return AST_PARSE_ERR;
+        return PARSE_ERR;
 
 #define AST_TRY_PARSE_PUNCTUATED(target, token_type)                           \
-    if (Punctuated_parse(iter, target, token_type) == AST_PARSE_ERR)           \
-        return AST_PARSE_ERR;
+    if (Punctuated_parse(iter, target, token_type) == PARSE_ERR)               \
+        return PARSE_ERR;
 
 // Parsing:
 
-typedef AstParseResultType (*AstStatementParser)(TokenArrayIter *,
-                                                 StatementArray *);
+typedef ParseResult (*AstStatementParser)(TokenArrayIter *, StatementArray *);
 
 AstParseResult Ast_parse(charArray *input) {
     static const AstStatementParser STATEMENT_PARSERS[2] = {
@@ -26,14 +25,14 @@ AstParseResult Ast_parse(charArray *input) {
     };
 
     TokenArray stream = {};
-    if (token_parse(&stream, input) == TOKEN_PARSE_ERR)
+    if (token_parse(&stream, input) == PARSE_ERR)
         return (AstParseResult){};
     TokenArrayIter iter = TokenArrayIter_create(&stream);
 
-    AstParseResult result = {.type = AST_PARSE_OK};
+    AstParseResult result = {.type = PARSE_OK};
 
     while (TokenArrayIter_peek(&iter) != NULL) {
-        AstParseResultType statement_parse_result = {};
+        ParseResult statement_parse_result = {};
         size_t current_token_index = iter.cursor;
 
         for (size_t i = 0; i < 2; i++) {
@@ -42,19 +41,19 @@ AstParseResult Ast_parse(charArray *input) {
             statement_parse_result =
                 STATEMENT_PARSERS[i](&iter, &result.ast.ok.statements);
 
-            if (statement_parse_result == AST_PARSE_OK)
+            if (statement_parse_result == PARSE_OK)
                 break;
         }
 
-        if (statement_parse_result == AST_PARSE_ERR)
+        if (statement_parse_result == PARSE_ERR)
             return (AstParseResult){};
     }
 
     return result;
 }
 
-AstParseResultType AstStatementSelect_parse(TokenArrayIter *iter,
-                                            StatementArray *statements) {
+ParseResult AstStatementSelect_parse(TokenArrayIter *iter,
+                                     StatementArray *statements) {
     StatementSelect select_statement = {};
 
     AST_TRY_PARSE_TOKEN(&select_statement.select_token, TOKEN_TYPE_KW_SELECT);
@@ -69,11 +68,11 @@ AstParseResultType AstStatementSelect_parse(TokenArrayIter *iter,
     };
     StatementArray_push(statements, &statement);
 
-    return AST_PARSE_OK;
+    return PARSE_OK;
 }
 
-AstParseResultType AstStatementInsert_parse(TokenArrayIter *iter,
-                                            StatementArray *statements) {
+ParseResult AstStatementInsert_parse(TokenArrayIter *iter,
+                                     StatementArray *statements) {
     StatementInsert insert_statement = {};
 
     AST_TRY_PARSE_TOKEN(&insert_statement.insert_token, TOKEN_TYPE_KW_INSERT);
@@ -90,19 +89,18 @@ AstParseResultType AstStatementInsert_parse(TokenArrayIter *iter,
     };
     StatementArray_push(statements, &statement);
 
-    return AST_PARSE_OK;
+    return PARSE_OK;
 }
 
-AstParseResultType Punctuated_parse(TokenArrayIter *iter,
-                                    Punctuated *punctuated,
-                                    TokenType token_type) {
+ParseResult Punctuated_parse(TokenArrayIter *iter, Punctuated *punctuated,
+                             TokenType token_type) {
     Token *token;
 
     bool parenthesized = false;
     bool parentheses_closed = false;
 
     if ((token = TokenArrayIter_peek(iter)) == NULL)
-        return AST_PARSE_ERR;
+        return PARSE_ERR;
 
     if (TokenType_cmp(token->type, TOKEN_TYPE_L_PAREN)) {
         punctuated->prens[0] = *token;
@@ -136,7 +134,7 @@ AstParseResultType Punctuated_parse(TokenArrayIter *iter,
         if (!expecting_ident &&
             TokenType_cmp(token->type, TOKEN_TYPE_R_PAREN)) {
             if (!parenthesized) {
-                return AST_PARSE_ERR;
+                return PARSE_ERR;
             }
 
             punctuated->prens[1] = *token;
@@ -149,7 +147,7 @@ AstParseResultType Punctuated_parse(TokenArrayIter *iter,
         break;
     }
 
-    return parenthesized && !parentheses_closed ? AST_PARSE_ERR : AST_PARSE_OK;
+    return parenthesized && !parentheses_closed ? PARSE_ERR : PARSE_OK;
 }
 
 bool ast_try_parse_token(TokenArrayIter *iter, Token *target,

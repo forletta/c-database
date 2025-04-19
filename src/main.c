@@ -27,7 +27,7 @@ int main(int argc, char *argv[]) {
 
         TokenArray stream = {};
 
-        if (token_parse(&stream, &input) == TOKEN_PARSE_ERR)
+        if (!token_parse(&stream, &input))
             printf("Failed to tokenize input: %.*s\n", (int)input.len,
                    input.ptr);
 
@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
 
         AstParseResult ast_parse_result = Ast_parse(&input);
 
-        if (ast_parse_result.type != AST_PARSE_OK) {
+        if (!ast_parse_result.type) {
             printf("Failed to parse token stream: %.*s\n", (int)input.len,
                    input.ptr);
             continue;
@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
 
         CommandArray commands = {};
 
-        if (Command_parse(&commands, &ast) == COMMAND_PARSE_ERR)
+        if (!Command_parse(&commands, &ast))
             printf("Failed to parse ast: %.*s\n", (int)input.len, input.ptr);
 
         for (size_t i = 0; i < commands.len; i++) {

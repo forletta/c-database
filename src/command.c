@@ -7,7 +7,7 @@ ARRAY_IMPL(Command);
 
 // Command:
 
-CommandParseResult Command_parse(CommandArray *commands, Ast *ast) {
+ParseResult Command_parse(CommandArray *commands, Ast *ast) {
     for (size_t i = 0; i < ast->statements.len; i++) {
         Statement *statement = StatementArray_get(&ast->statements, i);
 
@@ -18,14 +18,14 @@ CommandParseResult Command_parse(CommandArray *commands, Ast *ast) {
             return CommandInsert_parse(commands, &statement->statement.insert);
         default:
             printf("Command type unimplemented\n");
-            return COMMAND_PARSE_ERR;
+            return PARSE_ERR;
         }
     }
 
-    return COMMAND_PARSE_ERR;
+    return PARSE_ERR;
 }
 
-CommandParseResult CommandSelect_parse(CommandArray *commands,
+ParseResult CommandSelect_parse(CommandArray *commands,
                                        StatementSelect *statement) {
     CommandSelect select_command = {};
 
@@ -40,10 +40,10 @@ CommandParseResult CommandSelect_parse(CommandArray *commands,
     CommandArray_push(commands, &(Command){.type = STATEMENT_TYPE_SELECT,
                                            .command.select = select_command});
 
-    return COMMAND_PARSE_OK;
+    return PARSE_OK;
 }
 
-CommandParseResult CommandInsert_parse(CommandArray *commands,
+ParseResult CommandInsert_parse(CommandArray *commands,
                                        StatementInsert *statement) {
 
     CommandInsert insert_command = {};
@@ -61,7 +61,7 @@ CommandParseResult CommandInsert_parse(CommandArray *commands,
 
         ValueParseResult result;
         if ((result = Value_parse(token)).err == VALUE_PARSE_ERR)
-            return COMMAND_PARSE_ERR;
+            return PARSE_ERR;
 
         ValueArray_push(&insert_command.values, &result.value.ok);
     }
@@ -69,7 +69,7 @@ CommandParseResult CommandInsert_parse(CommandArray *commands,
     CommandArray_push(commands, &(Command){.type = STATEMENT_TYPE_INSERT,
                                            .command.insert = insert_command});
 
-    return COMMAND_PARSE_OK;
+    return PARSE_OK;
 }
 
 // Printing:

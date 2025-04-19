@@ -2,6 +2,7 @@
 #define TOKEN_H
 
 #include "char_array.h"
+#include "parse.h"
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -41,10 +42,10 @@ typedef struct {
 
 ARRAY(Token);
 
-typedef enum {
-    TOKEN_PARSE_ERR,
-    TOKEN_PARSE_OK,
-} TokenParseResult;
+// typedef enum {
+//     TOKEN_PARSE_ERR,
+//     TOKEN_PARSE_OK,
+// } TokenParseResult;
 
 typedef struct {
     TokenType token_type;
@@ -116,11 +117,11 @@ bool TokenType_cmp(TokenType lhs, TokenType rhs);
 
 // Parsing:
 
-TokenParseResult token_parse(TokenArray *stream, charArray *input);
-TokenParseResult token_parse_str(TokenArray *stream, charArrayIter *cursor);
-TokenParseResult token_parse_alnum(TokenArray *stream, charArrayIter *cursor);
-TokenParseResult token_parse_digit(TokenArray *stream, charArrayIter *cursor);
-TokenParseResult token_parse_alpha(TokenArray *stream, charArrayIter *cursor);
+ParseResult token_parse(TokenArray *stream, charArray *input);
+ParseResult token_parse_str(TokenArray *stream, charArrayIter *cursor);
+ParseResult token_parse_alnum(TokenArray *stream, charArrayIter *cursor);
+ParseResult token_parse_digit(TokenArray *stream, charArrayIter *cursor);
+ParseResult token_parse_alpha(TokenArray *stream, charArrayIter *cursor);
 
 // Validation:
 

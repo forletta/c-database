@@ -33,7 +33,7 @@ bool TokenType_cmp(TokenType lhs, TokenType rhs) {
 
 // Parsing:
 
-TokenParseResult token_parse(TokenArray *stream, charArray *input) {
+ParseResult token_parse(TokenArray *stream, charArray *input) {
     charArrayIter iter = charArrayIter_create(input);
     char *c;
 
@@ -56,7 +56,7 @@ TokenParseResult token_parse(TokenArray *stream, charArray *input) {
         case '\'':
         case '"':
             if (!token_parse_str(stream, &iter))
-                return TOKEN_PARSE_ERR;
+                return PARSE_ERR;
 
             continue;
         default:
@@ -65,21 +65,21 @@ TokenParseResult token_parse(TokenArray *stream, charArray *input) {
             if (token_isalnumlit(*c) && token_parse_alnum(stream, &iter))
                 continue;
 
-            return TOKEN_PARSE_ERR;
+            return PARSE_ERR;
         }
 
         size_t slice_start = charArrayIter_current_index(&iter);
         TokenArray_push_slice(stream, &iter, token_type, slice_start);
     }
 
-    return TOKEN_PARSE_OK;
+    return PARSE_OK;
 }
 
-TokenParseResult token_parse_str(TokenArray *stream, charArrayIter *iter) {
+ParseResult token_parse_str(TokenArray *stream, charArrayIter *iter) {
     char quote_type = *charArrayIter_current(iter);
 
     if (quote_type != '\'' && quote_type != '"')
-        return TOKEN_PARSE_ERR;
+        return PARSE_ERR;
 
     size_t slice_start = charArrayIter_current_index(iter);
     char *c;
@@ -88,7 +88,7 @@ TokenParseResult token_parse_str(TokenArray *stream, charArrayIter *iter) {
         switch (*c) {
         case '\\':
             if ((c = charArrayIter_next(iter)) == NULL)
-                return TOKEN_PARSE_ERR;
+                return PARSE_ERR;
 
             break;
         case '\'':
@@ -97,14 +97,14 @@ TokenParseResult token_parse_str(TokenArray *stream, charArrayIter *iter) {
                 break;
 
             TokenArray_push_slice(stream, iter, TOKEN_TYPE_STR, slice_start);
-            return TOKEN_PARSE_OK;
+            return PARSE_OK;
         }
     }
 
-    return TOKEN_PARSE_ERR;
+    return PARSE_ERR;
 }
 
-TokenParseResult token_parse_alnum(TokenArray *stream, charArrayIter *iter) {
+ParseResult token_parse_alnum(TokenArray *stream, charArrayIter *iter) {
     char current_char = *charArrayIter_current(iter);
 
     if (isdigit(current_char)) {
@@ -113,10 +113,10 @@ TokenParseResult token_parse_alnum(TokenArray *stream, charArrayIter *iter) {
         return token_parse_alpha(stream, iter);
     }
 
-    return TOKEN_PARSE_ERR;
+    return PARSE_ERR;
 }
 
-TokenParseResult token_parse_digit(TokenArray *stream, charArrayIter *iter) {
+ParseResult token_parse_digit(TokenArray *stream, charArrayIter *iter) {
     size_t slice_start = charArrayIter_current_index(iter);
     char *c;
 
@@ -125,16 +125,16 @@ TokenParseResult token_parse_digit(TokenArray *stream, charArrayIter *iter) {
             break;
 
         if (isalpha(*c))
-            return TOKEN_PARSE_ERR;
+            return PARSE_ERR;
 
         charArrayIter_next(iter);
     }
 
     TokenArray_push_slice(stream, iter, TOKEN_TYPE_NUM, slice_start);
-    return TOKEN_PARSE_OK;
+    return PARSE_OK;
 }
 
-TokenParseResult token_parse_alpha(TokenArray *stream, charArrayIter *iter) {
+ParseResult token_parse_alpha(TokenArray *stream, charArrayIter *iter) {
     size_t slice_start = charArrayIter_current_index(iter);
     char *c;
 
@@ -151,7 +151,7 @@ TokenParseResult token_parse_alpha(TokenArray *stream, charArrayIter *iter) {
         token_type = is_keyword.token_type.token_type;
 
     TokenArray_push_slice(stream, iter, token_type, slice_start);
-    return TOKEN_PARSE_OK;
+    return PARSE_OK;
 }
 
 // Validation:

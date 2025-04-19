@@ -2,7 +2,6 @@
 #define AST_H
 
 #include "array.h"
-#include "ascii_string.h"
 #include "token.h"
 #include <stdbool.h>
 
@@ -56,13 +55,8 @@ typedef struct {
     StatementArray statements;
 } Ast;
 
-typedef enum {
-    AST_PARSE_ERR,
-    AST_PARSE_OK,
-} AstParseResultType;
-
 typedef struct {
-    AstParseResultType type;
+    ParseResult type;
     union {
         struct {
         } err;
@@ -79,11 +73,11 @@ static const char *STATEMENT_TYPES[STATEMENT_TYPES_LEN] = {
 // Parsing:
 
 AstParseResult Ast_parse(charArray *input);
-AstParseResultType AstStatementSelect_parse(TokenArrayIter *iter,
+ParseResult AstStatementSelect_parse(TokenArrayIter *iter,
                                             StatementArray *statements);
-AstParseResultType AstStatementInsert_parse(TokenArrayIter *iter,
+ParseResult AstStatementInsert_parse(TokenArrayIter *iter,
                                             StatementArray *statements);
-AstParseResultType Punctuated_parse(TokenArrayIter *iter,
+ParseResult Punctuated_parse(TokenArrayIter *iter,
                                     Punctuated *punctuated,
                                     TokenType token_type);
 

@@ -2,7 +2,6 @@
 #define COMMAND_H
 
 #include "array.h"
-#include "ascii_string.h"
 #include "ast.h"
 #include "value.h"
 
@@ -29,18 +28,13 @@ typedef struct {
 
 ARRAY(Command);
 
-typedef enum {
-    COMMAND_PARSE_ERR,
-    COMMAND_PARSE_OK,
-} CommandParseResult;
-
 // Command:
 
-CommandParseResult Command_parse(CommandArray *commands, Ast *ast);
-CommandParseResult CommandSelect_parse(CommandArray *commands,
-                                       StatementSelect *statement);
-CommandParseResult CommandInsert_parse(CommandArray *commands,
-                                       StatementInsert *statement);
+ParseResult Command_parse(CommandArray *commands, Ast *ast);
+ParseResult CommandSelect_parse(CommandArray *commands,
+                                StatementSelect *statement);
+ParseResult CommandInsert_parse(CommandArray *commands,
+                                StatementInsert *statement);
 
 // Printing:
 
