@@ -27,7 +27,7 @@ int main(int argc, char *argv[]) {
 
         TokenArray stream = {};
 
-        if (token_parse(&stream, &input) == TOKENIZE_FAILURE)
+        if (token_parse(&stream, &input) == TOKEN_PARSE_ERR)
             printf("Failed to tokenize input: %.*s\n", (int)input.len,
                    input.ptr);
 

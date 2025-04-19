@@ -36,14 +36,14 @@ typedef enum {
 
 typedef struct {
     TokenType type;
-    charArray token;
+    charArray slice;
 } Token;
 
 ARRAY(Token);
 
 typedef enum {
-    TOKENIZE_SUCCESS,
-    TOKENIZE_FAILURE,
+    TOKEN_PARSE_ERR,
+    TOKEN_PARSE_OK,
 } TokenParseResult;
 
 typedef struct {
@@ -114,10 +114,6 @@ static TokenKeword TOKEN_KEYWORDS[TOKEN_KEYWORDS_LEN] = {
 
 bool TokenType_cmp(TokenType lhs, TokenType rhs);
 
-// Token:
-
-void Token_print(Token *token);
-
 // Parsing:
 
 TokenParseResult token_parse(TokenArray *stream, charArray *input);
@@ -130,5 +126,9 @@ TokenParseResult token_parse_alpha(TokenArray *stream, charArrayIter *cursor);
 
 bool token_isalnumlit(char c);
 TokenIsKeywordResult token_iskeyword(charArray *str);
+
+// Printing:
+
+void Token_print(Token *token);
 
 #endif /* ifndef TOKEN_H */

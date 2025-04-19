@@ -5,6 +5,18 @@
 
 ARRAY_IMPL(Token);
 
+// Helper Functions:
+
+void TokenArray_push_slice(TokenArray *stream, charArrayIter *iter,
+                           TokenType token_type, size_t slice_start) {
+    size_t slice_end = charArrayIter_current_index(iter) + 1;
+    charArray slice = charArray_slice(iter->array, slice_start, slice_end);
+
+    TokenArray_push(stream, &(Token){.type = token_type, .slice = slice});
+}
+
+// TokenType:
+
 bool TokenType_cmp(TokenType lhs, TokenType rhs) {
     if (lhs == TOKEN_TYPE_LIT || rhs == TOKEN_TYPE_LIT) {
         switch (lhs == TOKEN_TYPE_LIT ? rhs : lhs) {
@@ -19,169 +31,127 @@ bool TokenType_cmp(TokenType lhs, TokenType rhs) {
     return lhs == rhs;
 }
 
-// Token:
-
-void Token_print(Token *token) {
-    printf("Token { type = %s, token = \"%.*s\" }", token_types[token->type],
-           (int)token->token.len, token->token.ptr);
-}
-
 // Parsing:
 
 TokenParseResult token_parse(TokenArray *stream, charArray *input) {
-    TokenParseResult result = {};
-
-    charArrayIter cursor = charArrayIter_create(input);
+    charArrayIter iter = charArrayIter_create(input);
     char *c;
 
-    Token token = {};
-
-    while ((c = charArrayIter_next(&cursor)) != NULL) {
-        size_t current_index = charArrayIter_current_index(&cursor);
+    while ((c = charArrayIter_next(&iter)) != NULL) {
+        TokenType token_type = {};
 
         switch (*c) {
         case '(':
-            token.type = TOKEN_TYPE_L_PAREN;
-            token.token =
-                charArray_slice(input, current_index, current_index + 1);
+            token_type = TOKEN_TYPE_L_PAREN;
             break;
         case ')':
-            token.type = TOKEN_TYPE_R_PAREN;
-            token.token =
-                charArray_slice(input, current_index, current_index + 1);
+            token_type = TOKEN_TYPE_R_PAREN;
             break;
         case ',':
-            token.type = TOKEN_TYPE_COMMA;
-            token.token =
-                charArray_slice(input, current_index, current_index + 1);
+            token_type = TOKEN_TYPE_COMMA;
             break;
         case ';':
-            token.type = TOKEN_TYPE_SEMI;
-            token.token =
-                charArray_slice(input, current_index, current_index + 1);
+            token_type = TOKEN_TYPE_SEMI;
             break;
         case '\'':
         case '"':
-            if ((result = token_parse_str(stream, &cursor)) !=
-                TOKENIZE_SUCCESS) {
-                return result;
-            }
+            if (!token_parse_str(stream, &iter))
+                return TOKEN_PARSE_ERR;
+
             continue;
         default:
-            if (token_isalnumlit(*c)) {
-                if ((result = token_parse_alnum(stream, &cursor)) !=
-                    TOKENIZE_SUCCESS) {
-                    return result;
-                }
-            } else if (isspace(*c)) {
-            } else {
-                return TOKENIZE_FAILURE;
-            }
-            continue;
+            if (isspace(*c))
+                continue;
+            if (token_isalnumlit(*c) && token_parse_alnum(stream, &iter))
+                continue;
+
+            return TOKEN_PARSE_ERR;
         }
 
-        TokenArray_push(stream, &token);
+        size_t slice_start = charArrayIter_current_index(&iter);
+        TokenArray_push_slice(stream, &iter, token_type, slice_start);
     }
 
-    return result;
+    return TOKEN_PARSE_OK;
 }
 
-TokenParseResult token_parse_str(TokenArray *stream, charArrayIter *cursor) {
-    size_t start_index = charArrayIter_current_index(cursor);
-    char quote_type = *charArrayIter_current(cursor);
-    char *c;
+TokenParseResult token_parse_str(TokenArray *stream, charArrayIter *iter) {
+    char quote_type = *charArrayIter_current(iter);
 
     if (quote_type != '\'' && quote_type != '"')
-        return TOKENIZE_FAILURE;
+        return TOKEN_PARSE_ERR;
 
-    while ((c = charArrayIter_next(cursor)) != NULL) {
+    size_t slice_start = charArrayIter_current_index(iter);
+    char *c;
+
+    while ((c = charArrayIter_next(iter)) != NULL) {
         switch (*c) {
         case '\\':
-            if ((c = charArrayIter_next(cursor)) == NULL)
-                return TOKENIZE_FAILURE;
+            if ((c = charArrayIter_next(iter)) == NULL)
+                return TOKEN_PARSE_ERR;
 
             break;
         case '\'':
         case '"':
-            if (*c == quote_type) {
-                Token token = {
-                    .type = TOKEN_TYPE_STR,
-                    .token = charArray_slice(
-                        cursor->array, start_index,
-                        charArrayIter_current_index(cursor) + 1),
-                };
-                TokenArray_push(stream, &token);
-                return TOKENIZE_SUCCESS;
-            }
+            if (*c != quote_type)
+                break;
 
-            break;
+            TokenArray_push_slice(stream, iter, TOKEN_TYPE_STR, slice_start);
+            return TOKEN_PARSE_OK;
         }
     }
 
-    return TOKENIZE_FAILURE;
+    return TOKEN_PARSE_ERR;
 }
 
-TokenParseResult token_parse_alnum(TokenArray *stream, charArrayIter *cursor) {
-    char current_char = *charArrayIter_current(cursor);
+TokenParseResult token_parse_alnum(TokenArray *stream, charArrayIter *iter) {
+    char current_char = *charArrayIter_current(iter);
 
     if (isdigit(current_char)) {
-        return token_parse_digit(stream, cursor);
+        return token_parse_digit(stream, iter);
     } else if (token_isalnumlit(current_char)) {
-        return token_parse_alpha(stream, cursor);
+        return token_parse_alpha(stream, iter);
     }
 
-    return TOKENIZE_FAILURE;
+    return TOKEN_PARSE_ERR;
 }
 
-TokenParseResult token_parse_digit(TokenArray *stream, charArrayIter *cursor) {
-    size_t start_index = charArrayIter_current_index(cursor);
+TokenParseResult token_parse_digit(TokenArray *stream, charArrayIter *iter) {
+    size_t slice_start = charArrayIter_current_index(iter);
     char *c;
 
-    while ((c = charArrayIter_peek(cursor)) != NULL) {
-        if (isspace(*c) || !isalnum(*c)) {
+    while ((c = charArrayIter_peek(iter)) != NULL) {
+        if (isspace(*c) || !isalnum(*c))
             break;
-        }
 
-        if (isalpha(*c)) {
-            return TOKENIZE_FAILURE;
-        }
+        if (isalpha(*c))
+            return TOKEN_PARSE_ERR;
 
-        charArrayIter_next(cursor);
+        charArrayIter_next(iter);
     }
 
-    Token token = {
-        .type = TOKEN_TYPE_NUM,
-        .token = charArray_slice(cursor->array, start_index,
-                                 charArrayIter_current_index(cursor) + 1),
-    };
-
-    TokenArray_push(stream, &token);
-
-    return TOKENIZE_SUCCESS;
+    TokenArray_push_slice(stream, iter, TOKEN_TYPE_NUM, slice_start);
+    return TOKEN_PARSE_OK;
 }
 
-TokenParseResult token_parse_alpha(TokenArray *stream, charArrayIter *cursor) {
-    size_t start_index = charArrayIter_current_index(cursor);
+TokenParseResult token_parse_alpha(TokenArray *stream, charArrayIter *iter) {
+    size_t slice_start = charArrayIter_current_index(iter);
     char *c;
 
-    while ((c = charArrayIter_peek(cursor)) != NULL && token_isalnumlit(*c)) {
-        charArrayIter_next(cursor);
+    while ((c = charArrayIter_peek(iter)) != NULL && token_isalnumlit(*c)) {
+        charArrayIter_next(iter);
     }
 
-    Token token = {
-        .type = TOKEN_TYPE_IDENT,
-        .token = charArray_slice(cursor->array, start_index,
-                                 charArrayIter_current_index(cursor) + 1),
-    };
-
-    TokenIsKeywordResult is_keyword = token_iskeyword(&token.token);
+    size_t slice_end = charArrayIter_current_index(iter) + 1;
+    charArray slice = charArray_slice(iter->array, slice_start, slice_end);
+    TokenIsKeywordResult is_keyword = token_iskeyword(&slice);
+    TokenType token_type = TOKEN_TYPE_IDENT;
 
     if (is_keyword.is_keyword)
-        token.type = is_keyword.token_type.token_type;
+        token_type = is_keyword.token_type.token_type;
 
-    TokenArray_push(stream, &token);
-
-    return TOKENIZE_SUCCESS;
+    TokenArray_push_slice(stream, iter, token_type, slice_start);
+    return TOKEN_PARSE_OK;
 }
 
 // Validation:
@@ -214,4 +184,11 @@ TokenIsKeywordResult token_iskeyword(charArray *str) {
     }
 
     return result;
+}
+
+// Printing:
+
+void Token_print(Token *token) {
+    printf("Token {type = %s, token = \"%.*s\"}", token_types[token->type],
+           (int)token->slice.len, token->slice.ptr);
 }

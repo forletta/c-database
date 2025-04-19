@@ -46,7 +46,7 @@ typedef struct {
 } ValueParseResult;
 
 ValueParseResult Value_parse(Token *token);
-ValueParseResult Value_parse_num(charArray *num);
+ValueParseResult Value_parse_num(charArray *str);
 ValueParseResult Value_parse_str(charArray *str);
 
 void Value_print(Value *value);

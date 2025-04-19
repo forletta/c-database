@@ -4,27 +4,37 @@
 
 ARRAY_IMPL(Statement);
 
+// Helper macros:
+
+#define AST_TRY_PARSE_TOKEN(target, token_type)                                \
+    if (!ast_try_parse_token(iter, target, token_type))                        \
+        return AST_PARSE_ERR;
+
+#define AST_TRY_PARSE_PUNCTUATED(target, token_type)                           \
+    if (Punctuated_parse(iter, target, token_type) == AST_PARSE_ERR)           \
+        return AST_PARSE_ERR;
+
 // Parsing:
 
 typedef AstParseResultType (*AstStatementParser)(TokenArrayIter *,
                                                  StatementArray *);
 
 AstParseResult Ast_parse(charArray *input) {
-    AstParseResult result = {};
-
-    TokenArray stream = {};
-    if (token_parse(&stream, input) == TOKENIZE_FAILURE)
-        return result;
-    TokenArrayIter iter = TokenArrayIter_create(&stream);
-
     static const AstStatementParser STATEMENT_PARSERS[2] = {
         AstStatementSelect_parse,
         AstStatementInsert_parse,
     };
 
+    TokenArray stream = {};
+    if (token_parse(&stream, input) == TOKEN_PARSE_ERR)
+        return (AstParseResult){};
+    TokenArrayIter iter = TokenArrayIter_create(&stream);
+
+    AstParseResult result = {.type = AST_PARSE_OK};
+
     while (TokenArrayIter_peek(&iter) != NULL) {
-        size_t current_token_index = iter.cursor;
         AstParseResultType statement_parse_result = {};
+        size_t current_token_index = iter.cursor;
 
         for (size_t i = 0; i < 2; i++) {
             iter.cursor = current_token_index;
@@ -37,10 +47,9 @@ AstParseResult Ast_parse(charArray *input) {
         }
 
         if (statement_parse_result == AST_PARSE_ERR)
-            return result;
+            return (AstParseResult){};
     }
 
-    result.type = AST_PARSE_OK;
     return result;
 }
 
@@ -48,34 +57,18 @@ AstParseResultType AstStatementSelect_parse(TokenArrayIter *iter,
                                             StatementArray *statements) {
     StatementSelect select_statement = {};
 
-    if (!ast_try_parse_token(iter, &select_statement.select_token,
-                             TOKEN_TYPE_KW_SELECT)) {
-        return AST_PARSE_ERR;
-    }
-
-    if (Punctuated_parse(iter, &select_statement.fields, TOKEN_TYPE_IDENT) ==
-        AST_PARSE_ERR)
-        return AST_PARSE_ERR;
-
-    if (!ast_try_parse_token(iter, &select_statement.from_token,
-                             TOKEN_TYPE_KW_FROM)) {
-        return AST_PARSE_ERR;
-    }
-
-    if (!ast_try_parse_token(iter, &select_statement.table, TOKEN_TYPE_IDENT)) {
-        return AST_PARSE_ERR;
-    }
-
-    if (!ast_try_parse_token(iter, &select_statement.semi_token,
-                             TOKEN_TYPE_SEMI)) {
-        return AST_PARSE_ERR;
-    }
+    AST_TRY_PARSE_TOKEN(&select_statement.select_token, TOKEN_TYPE_KW_SELECT);
+    AST_TRY_PARSE_PUNCTUATED(&select_statement.fields, TOKEN_TYPE_IDENT);
+    AST_TRY_PARSE_TOKEN(&select_statement.from_token, TOKEN_TYPE_KW_FROM);
+    AST_TRY_PARSE_TOKEN(&select_statement.table, TOKEN_TYPE_IDENT);
+    AST_TRY_PARSE_TOKEN(&select_statement.semi_token, TOKEN_TYPE_SEMI);
 
     Statement statement = {
         .type = STATEMENT_TYPE_SELECT,
         .statement.select = select_statement,
     };
     StatementArray_push(statements, &statement);
+
     return AST_PARSE_OK;
 }
 
@@ -83,43 +76,20 @@ AstParseResultType AstStatementInsert_parse(TokenArrayIter *iter,
                                             StatementArray *statements) {
     StatementInsert insert_statement = {};
 
-    if (!ast_try_parse_token(iter, &insert_statement.insert_token,
-                             TOKEN_TYPE_KW_INSERT)) {
-        return AST_PARSE_ERR;
-    }
-
-    if (!ast_try_parse_token(iter, &insert_statement.into_token,
-                             TOKEN_TYPE_KW_INTO)) {
-        return AST_PARSE_ERR;
-    }
-
-    if (!ast_try_parse_token(iter, &insert_statement.table, TOKEN_TYPE_IDENT)) {
-        return AST_PARSE_ERR;
-    }
-
-    if (Punctuated_parse(iter, &insert_statement.fields, TOKEN_TYPE_IDENT) ==
-        AST_PARSE_ERR)
-        return AST_PARSE_ERR;
-
-    if (!ast_try_parse_token(iter, &insert_statement.values_token,
-                             TOKEN_TYPE_KW_VALUES)) {
-        return AST_PARSE_ERR;
-    }
-
-    if (Punctuated_parse(iter, &insert_statement.values, TOKEN_TYPE_LIT) ==
-        AST_PARSE_ERR)
-        return AST_PARSE_ERR;
-
-    if (!ast_try_parse_token(iter, &insert_statement.semi_token,
-                             TOKEN_TYPE_SEMI)) {
-        return AST_PARSE_ERR;
-    }
+    AST_TRY_PARSE_TOKEN(&insert_statement.insert_token, TOKEN_TYPE_KW_INSERT);
+    AST_TRY_PARSE_TOKEN(&insert_statement.into_token, TOKEN_TYPE_KW_INTO);
+    AST_TRY_PARSE_TOKEN(&insert_statement.table, TOKEN_TYPE_IDENT);
+    AST_TRY_PARSE_PUNCTUATED(&insert_statement.fields, TOKEN_TYPE_IDENT);
+    AST_TRY_PARSE_TOKEN(&insert_statement.values_token, TOKEN_TYPE_KW_VALUES);
+    AST_TRY_PARSE_PUNCTUATED(&insert_statement.values, TOKEN_TYPE_LIT);
+    AST_TRY_PARSE_TOKEN(&insert_statement.semi_token, TOKEN_TYPE_SEMI);
 
     Statement statement = {
         .type = STATEMENT_TYPE_INSERT,
         .statement.insert = insert_statement,
     };
     StatementArray_push(statements, &statement);
+
     return AST_PARSE_OK;
 }
 
@@ -133,18 +103,17 @@ AstParseResultType Punctuated_parse(TokenArrayIter *iter,
 
     if ((token = TokenArrayIter_peek(iter)) == NULL)
         return AST_PARSE_ERR;
-    
+
     if (TokenType_cmp(token->type, TOKEN_TYPE_L_PAREN)) {
         punctuated->prens[0] = *token;
         parenthesized = true;
+
         TokenArrayIter_next(iter);
     }
 
-    if (!ast_try_parse_token(iter, token, token_type)) {
-        return AST_PARSE_ERR;
-    }
-
+    AST_TRY_PARSE_TOKEN(token, token_type);
     TokenArray_push(&punctuated->tokens, token);
+
     bool expecting_ident = false;
 
     while ((token = TokenArrayIter_peek(iter)) != NULL) {
@@ -197,7 +166,7 @@ bool ast_try_parse_token(TokenArrayIter *iter, Token *target,
 // Printing:
 
 void Ast_print(Ast *ast) {
-    printf("Ast {.statements = [");
+    printf("Ast {statements = [");
 
     for (size_t i = 0; i < ast->statements.len; i++) {
         Statement_print(StatementArray_get(&ast->statements, i));
@@ -209,7 +178,7 @@ void Ast_print(Ast *ast) {
 }
 
 void Statement_print(Statement *statement) {
-    printf("Statement {.type = %s, .statement = ",
+    printf("Statement {type = %s, statement = ",
            STATEMENT_TYPES[statement->type]);
 
     switch (statement->type) {
@@ -225,56 +194,56 @@ void Statement_print(Statement *statement) {
 }
 
 void StatementSelect_print(StatementSelect *statement) {
-    printf("StatementSelect {.select_token = ");
+    printf("StatementSelect {select_token = ");
     Token_print(&statement->select_token);
 
-    printf(", .fields = ");
+    printf(", fields = ");
     Punctuated_print(&statement->fields);
 
-    printf(", .from_token = ");
+    printf(", from_token = ");
     Token_print(&statement->from_token);
 
-    printf(", .table = ");
+    printf(", table = ");
     Token_print(&statement->table);
 
-    printf(", .semi_token = ");
+    printf(", semi_token = ");
     Token_print(&statement->semi_token);
 
     printf("}");
 }
 
 void StatementInsert_print(StatementInsert *statement) {
-    printf("StatementInsert {.insert_token = ");
+    printf("StatementInsert {insert_token = ");
     Token_print(&statement->insert_token);
 
-    printf(", .into_token = ");
+    printf(", into_token = ");
     Token_print(&statement->into_token);
 
-    printf(", .table = ");
+    printf(", table = ");
     Token_print(&statement->table);
 
-    printf(", .fields = ");
+    printf(", fields = ");
     Punctuated_print(&statement->fields);
 
-    printf(", .values_token = ");
+    printf(", values_token = ");
     Token_print(&statement->values_token);
 
-    printf(", .values = ");
+    printf(", values = ");
     Punctuated_print(&statement->values);
 
-    printf(", .semi_token = ");
+    printf(", semi_token = ");
     Token_print(&statement->semi_token);
 
     printf("}");
 }
 
 void Punctuated_print(Punctuated *punctuated) {
-    printf("Punctuated {.parens = [");
+    printf("Punctuated {parens = [");
 
     Token_print(&punctuated->prens[0]);
     Token_print(&punctuated->prens[1]);
 
-    printf("], .tokens = [");
+    printf("], tokens = [");
     for (size_t i = 0; i < punctuated->tokens.len; i++) {
         Token_print(TokenArray_get(&punctuated->tokens, i));
         if (i < punctuated->tokens.len - 1)

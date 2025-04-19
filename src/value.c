@@ -7,9 +7,9 @@ ARRAY_IMPL(Value);
 ValueParseResult Value_parse(Token *token) {
     switch (token->type) {
     case TOKEN_TYPE_NUM:
-        return Value_parse_num(&token->token);
+        return Value_parse_num(&token->slice);
     case TOKEN_TYPE_STR:
-        return Value_parse_str(&token->token);
+        return Value_parse_str(&token->slice);
     default:
         break;
     }

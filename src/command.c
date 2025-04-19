@@ -29,19 +29,16 @@ CommandParseResult CommandSelect_parse(CommandArray *commands,
                                        StatementSelect *statement) {
     CommandSelect select_command = {};
 
-    select_command.table = charArray_copy(&statement->table.token);
+    select_command.table = charArray_copy(&statement->table.slice);
 
     for (size_t i = 0; i < statement->fields.tokens.len; i++) {
-        charArray field = charArray_copy(
-            &TokenArray_get(&statement->fields.tokens, i)->token);
+        Token *token = TokenArray_get(&statement->fields.tokens, i);
+        charArray field = charArray_copy(&token->slice);
         charArrayArray_push(&select_command.fields, &field);
     }
 
-    Command command = {
-        .type = STATEMENT_TYPE_SELECT,
-        .command.select = select_command,
-    };
-    CommandArray_push(commands, &command);
+    CommandArray_push(commands, &(Command){.type = STATEMENT_TYPE_SELECT,
+                                           .command.select = select_command});
 
     return COMMAND_PARSE_OK;
 }
@@ -51,11 +48,11 @@ CommandParseResult CommandInsert_parse(CommandArray *commands,
 
     CommandInsert insert_command = {};
 
-    insert_command.table = charArray_copy(&statement->table.token);
+    insert_command.table = charArray_copy(&statement->table.slice);
 
     for (size_t i = 0; i < statement->fields.tokens.len; i++) {
-        charArray field = charArray_copy(
-            &TokenArray_get(&statement->fields.tokens, i)->token);
+        Token *token = TokenArray_get(&statement->fields.tokens, i);
+        charArray field = charArray_copy(&token->slice);
         charArrayArray_push(&insert_command.fields, &field);
     }
 
@@ -69,11 +66,8 @@ CommandParseResult CommandInsert_parse(CommandArray *commands,
         ValueArray_push(&insert_command.values, &result.value.ok);
     }
 
-    Command command = {
-        .type = STATEMENT_TYPE_INSERT,
-        .command.insert = insert_command,
-    };
-    CommandArray_push(commands, &command);
+    CommandArray_push(commands, &(Command){.type = STATEMENT_TYPE_INSERT,
+                                           .command.insert = insert_command});
 
     return COMMAND_PARSE_OK;
 }
@@ -100,6 +94,7 @@ void CommandSelect_print(CommandSelect *command) {
     for (size_t i = 0; i < command->fields.len; i++) {
         charArray *field = charArrayArray_get(&command->fields, i);
         printf("\"%.*s\"", (int)field->len, field->ptr);
+
         if (i < command->fields.len - 1)
             printf(", ");
     }
@@ -114,6 +109,7 @@ void CommandInsert_print(CommandInsert *command) {
     for (size_t i = 0; i < command->fields.len; i++) {
         charArray *field = charArrayArray_get(&command->fields, i);
         printf("\"%.*s\"", (int)field->len, field->ptr);
+
         if (i < command->fields.len - 1)
             printf(", ");
     }
@@ -123,6 +119,7 @@ void CommandInsert_print(CommandInsert *command) {
     for (size_t i = 0; i < command->values.len; i++) {
         Value *field = ValueArray_get(&command->values, i);
         Value_print(field);
+
         if (i < command->values.len - 1)
             printf(", ");
     }
