@@ -1,4 +1,5 @@
 #include "ast.h"
+#include "command.h"
 #include "io.h"
 #include "meta_command.h"
 #include "token.h"
@@ -51,15 +52,15 @@ int main(int argc, char *argv[]) {
 
         printf("\n");
 
-        // CommandVector commands = {};
-        //
-        // Command_parse(&commands, &ast);
-        //
-        // for (size_t i = 0; i < commands.len; i++) {
-        //     Command *command = CommandVector_get(&commands, i);
-        //     Command_print(command);
-        //     printf("\n");
-        // }
+        CommandArray commands = {};
+
+        Command_parse(&commands, &ast);
+
+        for (size_t i = 0; i < commands.len; i++) {
+            Command *command = CommandArray_get(&commands, i);
+            Command_print(command);
+            printf("\n");
+        }
 
         // printf("%s\n", result.type == AST_PARSE_OK ? "ok" : "err");
         // if (result.type == AST_PARSE_OK)
